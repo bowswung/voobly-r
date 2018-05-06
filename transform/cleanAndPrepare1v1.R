@@ -29,12 +29,15 @@ match1v1Clean <- group_by(temp, MatchId) %>%
 match1v1CleanInverted <- mutate(match1v1Clean,
     oldOpponentCiv = opponentCiv,
     oldOpponentElo = opponentElo,
+    oldOpponentPlayerId = opponentPlayerId,
     winner = !winner,
     eloGap = 0 - eloGap,
     opponentCiv = playerCiv,
     opponentElo = playerElo,
+    opponentPlayerId = matchPlayerId,
     playerCiv = oldOpponentCiv,
-    playerElo = oldOpponentElo
+    playerElo = oldOpponentElo,
+    matchPlayerId = oldOpponentPlayerId
   ) %>% select(-one_of(c('oldOpponentCiv', 'oldOpponentElo')))
 
 match1v1Clean <- rbind(match1v1Clean, match1v1CleanInverted)
