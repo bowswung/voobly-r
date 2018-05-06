@@ -2,7 +2,7 @@
 temp <- match1v1Clean
 temp <- filter(temp, playerElo > 1800 & opponentElo > 1800)
 temp <- filter(temp, playerCiv != opponentCiv)
-#temp <- filter(temp, matchMap == "Arena")
+temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, wk == TRUE)
 temp$playerCiv <- factor(temp$playerCiv)
 temp$playerCiv <- relevel(temp$playerCiv, ref="Vietnamese")
@@ -38,6 +38,48 @@ anova(models.1v1.eloPlusCiv.logit, test="Chisq")
 
 
 
+
+tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2 >=2200), "2200+", "1800-2200"))
+tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
+
+
+
+models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + playerCiv:cutoff, data=tempWithCutoff, family = "binomial")
+
+anova(models.1v1.eloPlusSkillGap.logit, test="Chisq")
+
+drange <-  tidyr::expand(tempWithCutoff, playerCiv, cutoff)
+drange$eloGap = 0
+dplot <- cbind(drange, predict(models.1v1.eloPlusSkillGap.logit, newdata = drange, type = "link", se = TRUE))
+dplot <- within(dplot, {
+    PredictedProb <- plogis(fit)
+    LL <- plogis(fit - (1.96 * se.fit))
+    UL <- plogis(fit + (1.96 * se.fit))
+  })
+dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2200+", 0, PredictedProb))
+dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
+
+png(filename="images/1v1-1800-civPlusCutoff.png", width=1200, height=600)
+
+models.1v1.eloPlusCivPlusCutoff.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = PredictedProb)) +
+  labs(x = "Player civ", y = "Probability of winning match") +
+  geom_bar(width=0.7, position=position_dodge(width=0.7), stat="identity", alpha=0.8) +
+  geom_errorbar(aes(ymin=LL, ymax=UL),
+                  width=.2,
+                  color="#666666",
+                  position=position_dodge(0.7)) +
+  scale_x_discrete(labels = function(x) toupper(substr(x, 0, 3)))
+
+models.1v1.eloPlusCivPlusCutoff.plot
+dev.off()
+
+models.1v1.eloPlusCivPlusCutoff.plot
+
+stop("asdf")
+
+
+
+
 #model
 tempNoNewCivs <- filter(temp, !(as.character(playerCiv) %in% c('Khmer', 'Italians', 'Magyars', 'Indians', 'Malay', 'Slavs', 'Vietnamese', 'Incas', 'Burmese', 'Ethiopian', 'Portuguese', 'Berbers', 'Malian')))
 tempNoNewCivs$playerCiv <- droplevels(tempNoNewCivs$playerCiv)
@@ -62,7 +104,6 @@ library(ggplot2)
 
 drange <-  tidyr::expand(tempNoNewCivs, playerCiv, wk)
 drange$eloGap = 0
-drange$orderwk = FALSE
 dplot <- cbind(drange, predict(models.1v1.eloPlusCivPlusWK.logit, newdata = drange, type = "link", se = TRUE))
 dplot <- within(dplot, {
     PredictedProb <- plogis(fit)
