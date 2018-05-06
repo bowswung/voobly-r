@@ -1,0 +1,17 @@
+# Numerous always-ignore extensions
+*.diff
+*.err
+*.orig
+*.log
+*.log.html
+*.rej
+*.swo
+*.swp
+*.vi
+*~
+*.sass-cache
+*.directory
+*.Rproj
+*.RData
+*.Rhistory
+.Rproj.user/*
