@@ -19,6 +19,8 @@ match1v1Clean <- group_by(temp, MatchId) %>%
             opponentElo = last(MatchPlayerPreRating)
             ) %>%
   mutate(
-      matchMods = as.list(strsplit(matchMods, ","))
+      upVersion = ifelse(grepl("1.5 Beta", matchMods, fixed=TRUE), "1.5" , "1.4"),
+      wk = ifelse(grepl("WololoKingdoms", matchMods, fixed=TRUE), TRUE , FALSE)
     ) %>%
   filter(playerCiv != "VooblyCivError" & opponentCiv !="VooblyCivError")
+View(match1v1Clean)
