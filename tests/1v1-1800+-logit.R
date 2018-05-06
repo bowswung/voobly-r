@@ -5,51 +5,57 @@ library(tidyr)
 
 
 temp <- match1v1Clean
-temp <- filter(temp, matchPlayerId == "123636492" | opponentPlayerId == "123636492")
 temp <- filter(temp, playerCiv != opponentCiv)
+temp <- filter(temp, playerElo > 1800 & opponentElo > 1800)
 temp <- filter(temp, matchMap == "Arabia")
-#temp <- filter(temp, wk==TRUE)
+temp <- filter(temp, uplatest & wk)
+
+tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2 >=2200), "2200+", "1800-2200"))
+tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
+
+models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
+summary(models.1v1.eloPlusSkillGap.logit)
+confint.default(models.1v1.eloPlusSkillGap.logit)
+
+anova(models.1v1.eloPlusSkillGap.logit, test="Chisq")
 
 
-temp$playerCiv <- factor(temp$playerCiv)
-
-
-models.1v1.player.logit <- glm(winner ~ eloGap + playerCiv , data=temp, family = "binomial")
-anova(models.1v1.player.logit, test="Chisq")
-
-drange <-  tidyr::expand(temp, playerCiv)
+drange <-  tidyr::expand(tempWithCutoff, playerCiv, cutoff)
 drange$eloGap = 0
-
-
 drange <- rowwise(drange) %>%
-  mutate(countMatches = length(unique(temp[as.character(temp$playerCiv) == as.character(playerCiv), ]$matchId)))
-dplot <- cbind(drange, predict(models.1v1.player.logit, newdata = drange, type = "link", se = TRUE))
-
+  mutate(countMatches = length(unique(tempWithCutoff[tempWithCutoff$playerCiv == playerCiv & tempWithCutoff$cutoff == cutoff, ]$matchId)))
+dplot <- cbind(drange, predict(models.1v1.eloPlusSkillGap.logit, newdata = drange, type = "link", se = TRUE))
 dplot <- within(dplot, {
     PredictedProb <- plogis(fit)
     LL <- plogis(fit - (1.96 * se.fit))
     UL <- plogis(fit + (1.96 * se.fit))
   })
-dplot$playerCiv <- reorder(dplot$playerCiv, dplot$PredictedProb)
-png(filename="images/1v1-1800-civPlusPlayer.png", width=1200, height=600)
+dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2200+", 0, PredictedProb))
+dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
 
-models.1v1.player.plot <- ggplot(dplot, aes(x = playerCiv, y = PredictedProb)) +
+png(filename="images/1v1-1800-civPlusCutoff.png", width=1600, height=600)
+
+models.1v1.eloPlusCivPlusCutoff.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = PredictedProb)) +
   labs(x = "Player civ", y = "Probability of winning match") +
-  geom_bar(width=0.7, position=position_dodge(width=0.7), stat="identity",   alpha=0.8, fill="#da373b") +
+  geom_bar(width=0.7, position=position_dodge(width=0.7), stat="identity", alpha=0.8) +
   geom_errorbar(aes(ymin=LL, ymax=UL),
                   width=.2,
                   color="#666666",
                   position=position_dodge(0.7)) +
   geom_label(label.padding = unit(0.15, "lines"), position=position_dodge(0.7), aes(label=countMatches), size=3.5, label.size=0) +
-  scale_x_discrete(labels = function(x) toupper(substr(x, 0, 4))) +
-  ggtitle(paste("Yo on Arabia civ win chance based on ",  length(unique(temp$matchId)), " matches"))
+  scale_x_discrete(labels = function(x) toupper(substr(x, 0, 3))) +
+  ggtitle(paste("Non-mirror WK | 1.5 R6 | ", length(unique(tempWithCutoff$matchId)), " matches"))
 
-models.1v1.player.plot
+models.1v1.eloPlusCivPlusCutoff.plot
 dev.off()
 
-models.1v1.player.plot
+models.1v1.eloPlusCivPlusCutoff.plot
 
-stop("asdfsdf")
+
+
+stop("asdfs")
+
+
 
 # #model
 # models.1v1.elo.logit <- glm(winner ~ eloGap:cutoff, data=tempWithCutoff, family = "binomial")
@@ -95,45 +101,7 @@ stop("asdfsdf")
 # anova(models.1v1.eloPlusCiv.logit, test="Chisq")
 
 
-tempWithCutoff <- mutate(tempWithCutoff, cutoff = ifelse(((playerElo + opponentElo) /2 >=2200), "2200+", "1800-2200"))
-tempWithCutoff <- mutate(tempWithCutoff, uplatest = grepl("v1.5 Beta R6", matchMods))
-tempWithCutoff <- filter(tempWithCutoff, uplatest == TRUE)
-View(tempWithCutoff)
-tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
 
-
-
-models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + playerCiv:cutoff, data=tempWithCutoff, family = "binomial")
-
-anova(models.1v1.eloPlusSkillGap.logit, test="Chisq")
-
-drange <-  tidyr::expand(tempWithCutoff, playerCiv, cutoff)
-drange$eloGap = 0
-dplot <- cbind(drange, predict(models.1v1.eloPlusSkillGap.logit, newdata = drange, type = "link", se = TRUE))
-dplot <- within(dplot, {
-    PredictedProb <- plogis(fit)
-    LL <- plogis(fit - (1.96 * se.fit))
-    UL <- plogis(fit + (1.96 * se.fit))
-  })
-dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2200+", 0, PredictedProb))
-dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
-
-png(filename="images/1v1-1800-civPlusCutoff.png", width=1200, height=600)
-
-models.1v1.eloPlusCivPlusCutoff.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = PredictedProb)) +
-  labs(x = "Player civ", y = "Probability of winning match") +
-  geom_bar(width=0.7, position=position_dodge(width=0.7), stat="identity", alpha=0.8) +
-  geom_errorbar(aes(ymin=LL, ymax=UL),
-                  width=.2,
-                  color="#666666",
-                  position=position_dodge(0.7)) +
-  scale_x_discrete(labels = function(x) toupper(substr(x, 0, 3)))
-
-models.1v1.eloPlusCivPlusCutoff.plot
-dev.off()
-
-models.1v1.eloPlusCivPlusCutoff.plot
-stop("asdfs")
 
 
 
