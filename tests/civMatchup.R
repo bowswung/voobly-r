@@ -11,7 +11,7 @@ temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, wk==TRUE)
 
 
-civToExamine = "Huns"
+civToExamine = "Khmer"
 tempCiv <- filter(temp, opponentCiv == civToExamine)
 temp <- filter(temp, opponentCiv != civToExamine & playerCiv != civToExamine)
 
@@ -48,10 +48,10 @@ dplot <- within(dplot, {
   })
 dplot <- mutate(dplot, probForOrder = ifelse(matchup == "Other", 0, PredictedProb))
 dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
-png(filename="images/civMatchup.png", width=1200, height=600)
+png(filename=paste("images/civMatchup",civToExamine,".png",sep=""), width=1200, height=600)
 
 models.1v1.civMatchup.plot <- ggplot(dplot, aes(fill=matchup, x = playerCiv, y = PredictedProb)) +
-  labs(x = "Player civ", y = "Probability of winning match") +
+  labs(x = "Player civ", y = paste("Probability of winning match vs ", civToExamine, sep="")) +
   geom_bar(width=0.7, position=position_dodge(width=0.7), stat="identity",   alpha=0.8) +
   scale_fill_manual(values=c("#da373b", "#7394cbdb")) +
   geom_errorbar(aes(ymin=LL, ymax=UL),
