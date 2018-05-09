@@ -7,6 +7,7 @@ temp$randomBit <- sample(0:100, size=nrow(temp), replace = TRUE)
 match1v1Clean <- group_by(temp, MatchId) %>%
   arrange(randomBit, .by_group=TRUE) %>%
   summarise(
+            MatchDate = first(MatchDate),
             matchId = first(MatchId),
             matchMods = first(MatchMods),
             matchMap = first(MatchMap),
@@ -38,7 +39,7 @@ match1v1CleanInverted <- mutate(match1v1Clean,
     playerCiv = oldOpponentCiv,
     playerElo = oldOpponentElo,
     matchPlayerId = oldOpponentPlayerId
-  ) %>% select(-one_of(c('oldOpponentCiv', 'oldOpponentElo')))
+  ) %>% select(-one_of(c('oldOpponentCiv', 'oldOpponentElo', 'oldOpponentPlayerId')))
 
 match1v1Clean <- rbind(match1v1Clean, match1v1CleanInverted)
 rm(match1v1CleanInverted)

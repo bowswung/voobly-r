@@ -11,7 +11,7 @@ temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, wk==TRUE)
 
 
-civToExamine = "Franks"
+civToExamine = "Huns"
 tempCiv <- filter(temp, opponentCiv == civToExamine)
 temp <- filter(temp, opponentCiv != civToExamine & playerCiv != civToExamine)
 
@@ -48,9 +48,9 @@ dplot <- within(dplot, {
   })
 dplot <- mutate(dplot, probForOrder = ifelse(matchup == "Other", 0, PredictedProb))
 dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
-png(filename="images/1v1-1800-civPlusMap.png", width=1200, height=600)
+png(filename="images/civMatchup.png", width=1200, height=600)
 
-models.1v1.eloPlusCivPlusMap.plot <- ggplot(dplot, aes(fill=matchup, x = playerCiv, y = PredictedProb)) +
+models.1v1.civMatchup.plot <- ggplot(dplot, aes(fill=matchup, x = playerCiv, y = PredictedProb)) +
   labs(x = "Player civ", y = "Probability of winning match") +
   geom_bar(width=0.7, position=position_dodge(width=0.7), stat="identity",   alpha=0.8) +
   scale_fill_manual(values=c("#da373b", "#7394cbdb")) +
@@ -60,9 +60,11 @@ models.1v1.eloPlusCivPlusMap.plot <- ggplot(dplot, aes(fill=matchup, x = playerC
                   position=position_dodge(0.7)) +
   geom_label(label.padding = unit(0.15, "lines"), position=position_dodge(0.7), aes(label=countMatches), size=3.5, label.size=0, color='#ffffff') +
   scale_x_discrete(labels = function(x) toupper(substr(x, 0, 4))) +
-  ggtitle(paste(civToExamine, " counter civs | 1700+ Arabia WK | ",  length(unique(tempCiv$matchId)), " ", civToExamine, " matches | " , length(unique(temp$matchId)), " other matches"))
+  ggtitle(paste(civToExamine, " counter civs | 1700+ Arabia WK | ",  length(unique(tempCiv$matchId)), " ", civToExamine, " matches | " , length(unique(temp$matchId)), " other matches"))+
+  theme_bw(base_size=14)
 
-models.1v1.eloPlusCivPlusMap.plot
+
+models.1v1.civMatchup.plot
 dev.off()
 
-models.1v1.eloPlusCivPlusMap.plot
+models.1v1.civMatchup.plot
