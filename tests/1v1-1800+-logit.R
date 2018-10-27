@@ -9,9 +9,9 @@ temp <- match1v1Clean
 temp <- filter(temp, playerCiv != opponentCiv)
 temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
 temp <- filter(temp, matchMap == "Arabia")
-temp <- filter(temp, upReleaseVersion == "R7" & wk)
+temp <- filter(temp, wk)
 
-tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2 >=2000), "2000+", "1700-2000"))
+tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo > 2200 & opponentElo >2200)), "2200+", "1700-2200"))
 tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
 
 models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
@@ -31,7 +31,7 @@ dplot <- within(dplot, {
     LL <- plogis(fit - (1.96 * se.fit))
     UL <- plogis(fit + (1.96 * se.fit))
   })
-dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2000+", PredictedProb, 0))
+dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2200+", PredictedProb, 0))
 dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
 
 png(filename="images/1v1-1700-civPlusCutoff.png", width=1600, height=600)

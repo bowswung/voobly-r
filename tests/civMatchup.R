@@ -5,13 +5,13 @@ library(tidyr)
 
 
 temp <- match1v1Clean
-temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
+temp <- filter(temp, playerElo > 1800 & opponentElo > 1800)
 temp <- filter(temp, playerCiv != opponentCiv)
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, wk==TRUE)
 
 
-civToExamine = "Britons"
+civToExamine = "Burmese"
 tempCiv <- filter(temp, opponentCiv == civToExamine)
 temp <- filter(temp, opponentCiv != civToExamine & playerCiv != civToExamine)
 
@@ -64,7 +64,7 @@ models.1v1.civMatchup.plot <- ggplot(dplot, aes(fill=matchup, x = playerCiv, y =
                   position=position_dodge(0.7)) +
   geom_text(vjust=0.5, position=position_dodge(0.7), angle=90, aes(label=countMatches, y = 0.03 ), show.legend = FALSE, size=3.5) +
   scale_x_discrete(labels = function(x) toupper(substr(x, 0, 4))) +
-  ggtitle(paste(civToExamine, " counter civs | 1700+ Arabia WK | ",  length(unique(tempCiv$matchId)), " ", civToExamine, " matches | " , length(unique(temp$matchId)), " other matches"))+
+  ggtitle(paste(civToExamine, " counter civs | 1800+ Arabia WK | ",  length(unique(tempCiv$matchId)), " ", civToExamine, " matches | " , length(unique(temp$matchId)), " other matches"))+
   theme_bw(base_size=14)+
   theme(panel.border = element_blank(),
      axis.line = element_line(size = 0.5, linetype = "solid", colour = "#999999")
