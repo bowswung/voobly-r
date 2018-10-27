@@ -11,7 +11,7 @@ temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, wk==TRUE)
 
 
-civToExamine = "Burmese"
+civToExamine = "Franks"
 tempCiv <- filter(temp, opponentCiv == civToExamine)
 temp <- filter(temp, opponentCiv != civToExamine & playerCiv != civToExamine)
 
