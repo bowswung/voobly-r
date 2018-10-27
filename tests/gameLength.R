@@ -6,7 +6,7 @@ library(tidyr)
 
 temp <- match1v1Clean
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, playerElo > 1800 & opponentElo > 1800)
+temp <- filter(temp, playerElo > 2000 & opponentElo > 2000 )
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, ((upReleaseVersion == "R6" | upReleaseVersion == "R7") & wk))
 
@@ -45,7 +45,7 @@ models.1v1.gameLength.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = 
                   position=position_dodge(0.7)) +
   geom_text(vjust=0.5, position=position_dodge(0.7), angle=90, aes(label=countMatches, y = 0.03 ), show.legend = FALSE, size=3.5) +
   scale_x_discrete(labels = function(x) toupper(substr(x, 0, 4))) +
-  ggtitle(paste("Non-mirror WK > 1800 | Arabia | UP 1.5 | ", length(unique(tempWithCutoff$matchId)), " matches")) +
+  ggtitle(paste("Non-mirror WK > 2000 | Arabia | UP 1.5 | ", length(unique(tempWithCutoff$matchId)), " matches")) +
 
   theme_bw(base_size=14)+
   theme(panel.border = element_blank(),
