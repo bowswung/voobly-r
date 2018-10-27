@@ -39,7 +39,7 @@ png(filename="images/1v1-1700-civPlusCutoff.png", width=1600, height=600)
 models.1v1.eloPlusCivPlusCutoff.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = PredictedProb)) +
   labs(x = "Player civ", y = "Probability of winning match") +
   geom_bar( width=0.7, position=position_dodge(width=0.7), stat="identity", alpha=1) +
-  geom_errorbar(aes(ymin=LL, ymax=UL, color=cutoff), , show.legend = FALSE,
+  geom_errorbar(aes(ymin=LL, ymax=UL, color=cutoff), show.legend = FALSE,
                   width=.2,
                   position=position_dodge(0.7)) +
   geom_text(vjust=0.5, position=position_dodge(0.7), angle=90, aes(label=countMatches, y = 0.03 ), show.legend = FALSE, size=3.5) +

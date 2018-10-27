@@ -1,7 +1,7 @@
 #install.packages("ggthemes")
 
 # import all data
-library(readr)1
+library(readr)
 library(dplyr)
 
 matchDumpOld <- read_csv("data/20180504matchDump.csv",
