@@ -1,6 +1,8 @@
 
 library(dplyr)
+library(stringr)
 temp <- match1v1
+#temp <- head(match1v1)
 set.seed(42);
 temp$randomBit <- sample(0:100, size=nrow(temp), replace = TRUE)
 
@@ -22,7 +24,8 @@ match1v1Clean <- group_by(temp, MatchId) %>%
             ) %>%
   mutate(
       upVersion = ifelse(grepl("1.5 Beta", matchMods, fixed=TRUE), "1.5" , "1.4"),
-      uplatest = grepl("v1.5 Beta R6", matchMods),
+      uplatest = grepl("v1.5 Beta R7", matchMods),
+      upReleaseVersion = sapply(matchMods, function(x) (str_match(x, regex("v1\\.5 Beta (R[0-9]+)"))[2])),
       wk = ifelse(grepl("WololoKingdoms", matchMods, fixed=TRUE), TRUE , FALSE)
     ) %>%
   filter(playerCiv != "VooblyCivError" & opponentCiv !="VooblyCivError")

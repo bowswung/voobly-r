@@ -1,4 +1,5 @@
 library(ggplot2)
+library(ggthemes)
 library(dplyr)
 library(tidyr)
 
@@ -6,11 +7,11 @@ library(tidyr)
 
 temp <- match1v1Clean
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, playerElo > 1800 & opponentElo > 1800)
+temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
 temp <- filter(temp, matchMap == "Arabia")
-temp <- filter(temp, uplatest & wk)
+temp <- filter(temp, upReleaseVersion == "R7" & wk)
 
-tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2 >=2200), "2200+", "1800-2200"))
+tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2 >=2000), "2000+", "1700-2000"))
 tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
 
 models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
@@ -30,21 +31,26 @@ dplot <- within(dplot, {
     LL <- plogis(fit - (1.96 * se.fit))
     UL <- plogis(fit + (1.96 * se.fit))
   })
-dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2200+", 0, PredictedProb))
+dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2000+", PredictedProb, 0))
 dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
 
-png(filename="images/1v1-1800-civPlusCutoff.png", width=1600, height=600)
+png(filename="images/1v1-1700-civPlusCutoff.png", width=1600, height=600)
 
 models.1v1.eloPlusCivPlusCutoff.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = PredictedProb)) +
   labs(x = "Player civ", y = "Probability of winning match") +
-  geom_bar(width=0.7, position=position_dodge(width=0.7), stat="identity", alpha=0.8) +
-  geom_errorbar(aes(ymin=LL, ymax=UL),
+  geom_bar( width=0.7, position=position_dodge(width=0.7), stat="identity", alpha=1) +
+  geom_errorbar(aes(ymin=LL, ymax=UL, color=cutoff), , show.legend = FALSE,
                   width=.2,
-                  color="#666666",
                   position=position_dodge(0.7)) +
-  geom_label(label.padding = unit(0.15, "lines"), position=position_dodge(0.7), aes(label=countMatches), size=3.5, label.size=0) +
-  scale_x_discrete(labels = function(x) toupper(substr(x, 0, 3))) +
-  ggtitle(paste("Non-mirror WK | 1.5 R6 | ", length(unique(tempWithCutoff$matchId)), " matches"))
+  geom_text(vjust=0.5, position=position_dodge(0.7), angle=90, aes(label=countMatches, y = 0.03 ), show.legend = FALSE, size=3.5) +
+  scale_x_discrete(labels = function(x) toupper(substr(x, 0, 4))) +
+  ggtitle(paste("Non-mirror WK | Arabia | 1.5 R7 | ", length(unique(tempWithCutoff$matchId)), " matches")) +
+  theme_bw(base_size=14)+
+  theme(panel.border = element_blank(),
+     axis.line = element_line(size = 0.5, linetype = "solid", colour = "#999999")
+    )+
+  scale_fill_manual(values=c("#b6d8f4", "#5ba3d8"), name = "ELO cutoff") +
+  scale_colour_manual(values=c("#78b3e0", "#0974b3"))
 
 models.1v1.eloPlusCivPlusCutoff.plot
 dev.off()
