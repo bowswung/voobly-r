@@ -12,7 +12,7 @@ temp <- filter(temp, ((upReleaseVersion == "R6" | upReleaseVersion == "R7") & wk
 
 
 
-tempWithCutoff <- mutate(temp, cutoff = ifelse((MatchDuration < (60 * 40)), "< 35 mins", "> 35 mins"))
+tempWithCutoff <- mutate(temp, cutoff = ifelse((MatchDuration < (60 * 35)), "< 35 mins", "> 35 mins"))
 tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
 
 models.1v1.gameLength.logit <- glm(winner ~ eloGap + playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
