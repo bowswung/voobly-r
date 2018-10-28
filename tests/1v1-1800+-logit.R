@@ -2,6 +2,7 @@ library(ggplot2)
 library(ggthemes)
 library(dplyr)
 library(tidyr)
+library(rms)
 
 
 
@@ -11,15 +12,51 @@ temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, wk)
 
+
+
+temp <- mutate(temp, eloGapStepped = eloGap)
+
+
+
+fit <- lrm(winner ~ eloGap, data=temp, x=TRUE, y=TRUE)
+
+anova(fit)
+residuals(fit,"gof")
+
+tempPlot <- temp %>%
+    group_by(eloGapStepped) %>%
+    summarise(meanWinning = mean(winner), count=n())
+
+
+m <- glm(winner ~ eloGap, data=temp, family = "binomial")
+drange <-  tidyr::expand(temp, eloGap = -800:800)
+dplot <- cbind(drange, predict(m, newdata = drange, type = "link", se = TRUE))
+dplot <- within(dplot, {
+    PredictedProb <- plogis(fit)
+    LL <- plogis(fit - (1.96 * se.fit))
+    UL <- plogis(fit + (1.96 * se.fit))
+  })
+
+
+ggplot(tempPlot, aes(x=eloGapStepped, y = meanWinning)) + geom_point(aes(size=count)) +
+  scale_size_continuous(range = c(0.1, 2))+
+
+  geom_ribbon(data=dplot, aes(x=eloGap, y=PredictedProb, ymin = LL,
+    ymax = UL), alpha = 1, color="#ff0000")
+
+stop("ADS")
+
+
 tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2) >=2000, "2000+", "1700-2000"))
 tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
 
-models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
+models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + eloGap:playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
 summary(models.1v1.eloPlusSkillGap.logit)
 confint.default(models.1v1.eloPlusSkillGap.logit)
 
 anova(models.1v1.eloPlusSkillGap.logit, test="Chisq")
 
+stop("asdf");
 
 drange <-  tidyr::expand(tempWithCutoff, playerCiv, cutoff)
 drange$eloGap = 0
