@@ -9,11 +9,10 @@ temp <- match1v1Clean
 temp <- filter(temp, playerCiv != opponentCiv)
 temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
 temp <- filter(temp, matchMap == "Arabia")
-temp <- filter(temp, wk)
+temp <- filter(temp, wk & upReleaseVersion == "R7")
 
-tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo > 2200 & opponentElo >2200)), "2200+", "1700-2200"))
-tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
-
+tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo)/2 >= 2000), "2000+", "1700-2000"))
+tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff, levels=c("2000+", "1700-2000"))
 models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
 summary(models.1v1.eloPlusSkillGap.logit)
 confint.default(models.1v1.eloPlusSkillGap.logit)
@@ -22,6 +21,8 @@ anova(models.1v1.eloPlusSkillGap.logit, test="Chisq")
 
 
 drange <-  tidyr::expand(tempWithCutoff, playerCiv, cutoff)
+
+
 drange$eloGap = 0
 drange <- rowwise(drange) %>%
   mutate(countMatches = length(unique(tempWithCutoff[tempWithCutoff$playerCiv == playerCiv & tempWithCutoff$cutoff == cutoff, ]$matchId)))
@@ -31,8 +32,10 @@ dplot <- within(dplot, {
     LL <- plogis(fit - (1.96 * se.fit))
     UL <- plogis(fit + (1.96 * se.fit))
   })
-dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2200+", PredictedProb, 0))
+dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2000+", 0, PredictedProb))
 dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
+
+
 
 png(filename="images/1v1-1700-civPlusCutoff.png", width=1600, height=600)
 
