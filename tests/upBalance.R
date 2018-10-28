@@ -10,8 +10,9 @@ temp <- filter(temp, playerElo > 1800 & opponentElo > 1800)
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, ((upReleaseVersion == "R6" | upReleaseVersion == "R7") & wk))
 
-tempWithCutoff <- mutate(temp, cutoff = upReleaseVersion)
-tempWithCutoff$cutoff <- factor(tempWithCutoff$upReleaseVersion)
+tempWithCutoff <- mutate(temp, cutoff = (ifelse(MatchDate < "2018-09-11 00:00:00", "Old balance", "New balance")))
+tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff, levels=c("Old balance", "New balance"))
+
 
 models.1v1.upBalance.logit <- glm(winner ~ eloGap + playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
 summary(models.1v1.upBalance.logit)
@@ -30,7 +31,7 @@ dplot <- within(dplot, {
     LL <- plogis(fit - (1.96 * se.fit))
     UL <- plogis(fit + (1.96 * se.fit))
   })
-dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="R7", PredictedProb, 0))
+dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="New balance", PredictedProb, 0))
 dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
 
 png(filename="images/1v1-1800-upBalance.png", width=1600, height=600)
@@ -49,7 +50,7 @@ models.1v1.upBalance.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = P
   theme(panel.border = element_blank(),
      axis.line = element_line(size = 0.5, linetype = "solid", colour = "#999999")
     )+
-  scale_fill_manual(values=c("#b6d8f4", "#5ba3d8"), name = "UP RC") +
+  scale_fill_manual(values=c("#b6d8f4", "#5ba3d8"), name = "Balance") +
   scale_colour_manual(values=c("#78b3e0", "#0974b3"))
 
 
