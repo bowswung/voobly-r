@@ -20,12 +20,16 @@ temp <- mutate(temp, eloGapStepped = eloGap)
 
 fit <- lrm(winner ~ eloGap, data=temp, x=TRUE, y=TRUE)
 
+temp <- filter(temp, eloGap > -400 & eloGap < 400)
+hist(temp$eloGap, breaks=800)
+stop("asdfsadf")
 anova(fit)
 residuals(fit,"gof")
 
 tempPlot <- temp %>%
     group_by(eloGapStepped) %>%
     summarise(meanWinning = mean(winner), count=n())
+
 
 
 m <- glm(winner ~ eloGap, data=temp, family = "binomial")
