@@ -7,6 +7,9 @@ library(rms)
 
 
 temp <- match1v1Clean
+
+temp <- distinct(temp, MatchId, .keep_all = TRUE)
+
 temp <- filter(temp, playerCiv != opponentCiv)
 temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
 temp <- filter(temp, matchMap == "Arabia")
@@ -20,15 +23,15 @@ temp <- mutate(temp, eloGapStepped = eloGap)
 
 fit <- lrm(winner ~ eloGap, data=temp, x=TRUE, y=TRUE)
 
-temp <- filter(temp, eloGap > -400 & eloGap < 400)
-hist(temp$eloGap, breaks=800)
-stop("asdfsadf")
+
 anova(fit)
 residuals(fit,"gof")
 
+
+
 tempPlot <- temp %>%
     group_by(eloGapStepped) %>%
-    summarise(meanWinning = mean(winner), count=n())
+    summarise(meanWinning = mean(winner), countWins=(n()/425))
 
 
 
@@ -42,11 +45,15 @@ dplot <- within(dplot, {
   })
 
 
-ggplot(tempPlot, aes(x=eloGapStepped, y = meanWinning)) + geom_point(aes(size=count)) +
-  scale_size_continuous(range = c(0.1, 2))+
+ggplot(tempPlot, aes(x=eloGapStepped, y = meanWinning)) +
+  geom_point(aes(size=countWins)) +
+  scale_x_continuous(limits = c(-500, 500), breaks = round(seq(-500, 500, by = 50))) +
+  geom_bar(data = tempPlot, fill="red", stat="identity", aes(x=eloGapStepped, y = countWins), alpha=0.3) +
 
+  scale_size_continuous(range = c(0.1, 2))+
   geom_ribbon(data=dplot, aes(x=eloGap, y=PredictedProb, ymin = LL,
     ymax = UL), alpha = 1, color="#ff0000")
+
 
 stop("ADS")
 
