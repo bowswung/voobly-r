@@ -5,80 +5,219 @@ library(tidyr)
 library(rms)
 library(purrr)
 library(DescTools)
-
+library(corrplot)
+source("tests/singleCivMatchup.R")
 
 temp <- match1v1Clean
 
 temp <- distinct(temp, MatchId, .keep_all = TRUE)
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, playerElo > 1700 & opponentElo > 1700 )
+temp <- filter(temp, playerElo > 1700 & opponentElo > 1700 & ((playerElo + opponentElo) /2) < 2000)
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, (upReleaseVersion == "R6" | upReleaseVersion == "R7" & wk))
 
-temp <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2) >=2000, "2000+", "1700-2000"))
-temp$cutoff <- factor(temp$cutoff)
+#temp <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2) >=2000, "2000+", "1700-2000"))
+#temp$cutoff <- factor(temp$cutoff)
 
 civList <- sort(unique(temp$playerCiv))
 
 
-temp <- rowwise(temp) %>% mutate(
-    playerCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), playerCiv, opponentCiv),
-    opponentCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), opponentCiv, playerCiv),
-    matchup = paste(playerCiv, opponentCiv, sep="-"),
-    matchupFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), paste(playerCiv, opponentCiv, sep="-"), paste(opponentCiv, playerCiv , sep="-")),
+# res <- singleCivMatchup(tempCivFixed, "Franks-Khmer")
 
-    eloGapFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), eloGap, -eloGap),
-    winnerFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), winner, !winner))
-temp$matchupFixed <- factor(temp$matchupFixed)
+# stop("asdfsadf")
+# tempCivFixed <- rowwise(temp) %>% mutate(
+#     playerCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), playerCiv, opponentCiv),
+#     opponentCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), opponentCiv, playerCiv),
+#     matchup = paste(playerCiv, opponentCiv, sep="-"),
+#     matchupFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), paste(playerCiv, opponentCiv, sep="-"), paste(opponentCiv, playerCiv , sep="-")),
 
-temp$matchupFixed <- relevel(temp$matchupFixed, "Magyars-Turks")
+#     eloGapFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), eloGap, -eloGap),
+#     winnerFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), winner, !winner))
+# tempCivFixed$matchupFixed <- factor(tempCivFixed$matchupFixed)
 
-models.1v1.civMatchups.logit <- glm(winnerFixed ~ eloGapFixed + matchupFixed + cutoff:matchupFixed, data=temp, family = "binomial")
+# tempCivFixed$matchupFixed <- relevel(tempCivFixed$matchupFixed, "Magyars-Turks")
+
+# models.1v1.civMatchups.logit <- glm(winnerFixed ~ eloGapFixed + matchupFixed, data=tempCivFixed, family = "binomial")
 
 
 
-summary(models.1v1.civMatchups.logit)
-PseudoR2(models.1v1.civMatchups.logit, which="Tjur")
-anova(models.1v1.civMatchups.logit, test="Chisq")
+# summary(models.1v1.civMatchups.logit)
+# PseudoR2(models.1v1.civMatchups.logit, which="Tjur")
+# anova(models.1v1.civMatchups.logit, test="Chisq")
+
+# stop("asdf")
+
+
+flipMatchup <- function(x) {
+  s <- unlist(strsplit(x, "-", TRUE))
+  paste(s[2], "-", s[1], sep="")
+}
+
+
+tempCivFixed$matchupFixed <- as.character(tempCivFixed$matchupFixed)
+tempCivFixed$matchupFixed <- factor(tempCivFixed$matchupFixed)
+drange <-  tidyr::expand(tempCivFixed, matchupFixed)
+drange$eloGapFixed = 0
+drange$type = "Predicted"
+drange <- rowwise(drange) %>%
+  mutate(countMatches = length(unique(tempCivFixed[tempCivFixed$matchupFixed == matchupFixed, ]$matchId)))
+dplot <- cbind(drange, predict(models.1v1.civMatchups.logit, newdata = drange, type = "link", se = TRUE))
+
+dplot <- rowwise (dplot) %>% do (
+    binTest = singleCivMatchup(tempCivFixed, .$matchupFixed),
+    matchupFixed = as.character(.$matchupFixed),
+    type = "Predicted",
+    countMatches = .$countMatches
+  )
+
+
+# THIS IS FOR A CORR MATRIZ
+crange <-  tidyr::expand(tempCivFixed, matchupFixed)
+cplot <- rowwise (crange) %>% do (
+    binTest = singleCivMatchup(tempCivFixed, .$matchupFixed),
+    matchupFixed = as.character(.$matchupFixed),
+    civs = unlist(strsplit(as.character(.$matchupFixed), "-", TRUE)),
+    countMatches = length(unique(tempCivFixed[tempCivFixed$matchupFixed == .$matchupFixed, ]$matchId))
+  )
+
+cplotSide1 <- rowwise(cplot) %>% mutate(
+  civ1 = civs[1],
+  civ2 = civs[2],
+  winRate = binTest$estimate - 0.5,
+  winRateProb = binTest$civP
+  )
+
+cplotSide2 <- rowwise(cplot) %>% mutate(
+  civ1 = civs[2],
+  civ2 = civs[1],
+  winRate = (1 - binTest$estimate) - 0.5,
+  winRateProb = binTest$civP
+  )
+cplot <- rbind(cplotSide1, cplotSide2)
+cplot$civ1 <- factor(cplot$civ1)
+cplot$civ2 <- factor(cplot$civ2)
+cMatrix <- xtabs(winRate ~ civ1 + civ2, data=cplot)
+cPvals <- xtabs(winRateProb ~ civ1 + civ2, data=cplot)
+
+png(filename="temp/images/1v1-1700-2000-civCorrPlot.png", width=1200, height=1200)
+
+
+cplotDone <- corrplot(cMatrix,
+  p.mat=cPvals,
+  insig = "blank",
+  sig.level=0.01,
+  method = "circle",
+  is.corr=FALSE,
+  tl.col = "#333333",
+  col=colorRampPalette(c("red", "white", "green"))(100),
+  cl.lim =c(-0.5,0.5))
+
+cplotDone
+dev.off()
+cplotDone
 
 stop("asdf")
 
 
-drange <-  tidyr::expand(tempWithCutoff, playerCiv, cutoff)
-drange$eloGap = 0
-drange <- rowwise(drange) %>%
-  mutate(countMatches = length(unique(tempWithCutoff[tempWithCutoff$playerCiv == playerCiv & tempWithCutoff$cutoff == cutoff, ]$matchId)))
-dplot <- cbind(drange, predict(models.1v1.eloPlusSkillGap.logit, newdata = drange, type = "link", se = TRUE))
-dplot <- within(dplot, {
-    PredictedProb <- plogis(fit)
-    LL <- plogis(fit - (1.96 * se.fit))
-    UL <- plogis(fit + (1.96 * se.fit))
-  })
-dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2000+", PredictedProb, 0))
-dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
 
-png(filename="images/1v1-1700-civPlusCutoff.png", width=1600, height=600)
 
-models.1v1.eloPlusCivPlusCutoff.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = PredictedProb)) +
-  labs(x = "Player civ", y = "Probability of winning match") +
+
+dplot <- rowwise(dplot) %>% mutate(
+    winRate = ifelse(binTest$estimate > 0.5, binTest$estimate, 1-binTest$estimate),
+    LL = ifelse(binTest$estimate > 0.5, binTest$estimateLwr, 1-binTest$estimateLwr),
+    UL = ifelse(binTest$estimate > 0.5, binTest$estimateUpr, 1-binTest$estimateUpr),
+    winRateProb = binTest$civP,
+    matchupOriginal = matchupFixed,
+    matchupFixed = ifelse(binTest$estimate > 0.5, matchupFixed, flipMatchup(matchupFixed)),
+    shouldNotFlip = binTest$estimate > 0.5
+  )
+
+# dplot <- within(dplot, {
+#     winRate <- plogis(fit)
+#     shouldFlip <- winRate < 0.5
+#     LL <- plogis(fit - (1.96 * se.fit))
+#     UL <- plogis(fit + (1.96 * se.fit))
+#   })
+dplot <- dplot[c("matchupFixed", "winRate", "LL", "UL", "countMatches", "type", "shouldNotFlip", "matchupOriginal", "winRateProb")]
+
+dplot$matchupFixed <- as.character(dplot$matchupFixed)
+dplot$matchupFixed <- factor(dplot$matchupFixed)
+
+drangeObserved <- filter(tempCivFixed, eloGap > -50 & eloGap < 50)
+drangeObserved <- group_by(drangeObserved, matchupFixed) %>%
+                    summarise(winRate = mean(winnerFixed), LL=mean(winnerFixed), UL=mean(winnerFixed), countMatches = n())
+drangeObserved$type = "Observed"
+
+dplot <- arrange(dplot, matchupOriginal)
+drangeObserved <- arrange(drangeObserved, matchupFixed)
+drangeObserved$shouldNotFlip <- dplot$shouldNotFlip
+
+
+
+dplot <- dplot[c("matchupFixed", "winRate", "LL", "UL", "countMatches", "type", "shouldNotFlip", "winRateProb")]
+
+drangeObserved$matchupFixed <- as.character(drangeObserved$matchupFixed)
+drangeObserved <- rowwise(drangeObserved) %>% mutate(
+    winRate = ifelse(shouldNotFlip, winRate, (1 - winRate)),
+    LL = ifelse(shouldNotFlip, LL, (1 - LL)),
+    UL = ifelse(shouldNotFlip, UL, (1 - UL)),
+    matchupFixed = ifelse(shouldNotFlip, matchupFixed, flipMatchup(matchupFixed)),
+    winRateProb = 1
+  )
+drangeObserved$matchupFixed <- as.character(drangeObserved$matchupFixed)
+
+drangeObserved$matchupFixed <- factor(drangeObserved$matchupFixed)
+
+
+dplotFinal <- rbind(dplot, drangeObserved)
+dplotFinal$matchupFixed <- as.character(dplotFinal$matchupFixed)
+
+
+dplotFinal$matchupFixed <- as.character(dplotFinal$matchupFixed)
+dplotFinal <- mutate(dplotFinal, probForOrder = ifelse(type =="Predicted", winRate, 0))
+dplotFinal$matchupFixed <- reorder(dplotFinal$matchupFixed, dplotFinal$probForOrder)
+dplotFinal$type <- as.character(dplotFinal$type)
+
+sigLevel = 0.001
+includeMatchups <- filter(dplotFinal, winRateProb < sigLevel)$matchupFixed
+dplotFinal <- filter(dplotFinal, matchupFixed %in% includeMatchups)
+
+dplotFinal$winRate = dplotFinal$winRate * 100
+dplotFinal$LL = dplotFinal$LL * 100
+dplotFinal$UL = dplotFinal$UL * 100
+
+
+dplotFinal <- rowwise(dplotFinal) %>% mutate(
+  barLabel = ifelse(type == "Predicted", paste("n = ", as.character(countMatches), ",", " p = ", prettyNum(winRateProb, digits=3), sep="") , paste("n = ", as.character(countMatches), sep="")),
+  labelColor = ifelse(type == "Predicted", "#FFFFFF", "#000000")
+
+)
+
+
+
+png(filename="temp/images/1v1-1700-2000-civMatchup.png", width=1600, height=600)
+
+models.1v1.civMatchups.plot <- ggplot(dplotFinal, aes(fill=type, x = matchupFixed, y = winRate)) +
+  labs(x = "matchup", y = "Win rate percent") +
   geom_bar( width=0.7, position=position_dodge(width=0.7), stat="identity", alpha=1) +
-  geom_errorbar(aes(ymin=LL, ymax=UL, color=cutoff), show.legend = FALSE,
+  geom_errorbar(aes(ymin=LL, ymax=UL, color=type, alpha=ifelse(type == "Predicted", 1, 0)), show.legend = FALSE,
                   width=.2,
                   position=position_dodge(0.7)) +
-  geom_text(vjust=0.5, position=position_dodge(0.7), angle=90, aes(label=countMatches, y = 0.03 ), show.legend = FALSE, size=3.5) +
-  scale_x_discrete(labels = function(x) toupper(substr(x, 0, 4))) +
-  ggtitle(paste("Non-mirror WK | Arabia | 1.5 R7 | ", length(unique(tempWithCutoff$matchId)), " matches")) +
+  geom_text(vjust=0.5, hjust=0,  position=position_dodge(0.7), angle=90, aes(label=barLabel, y = 3 ), show.legend = FALSE, size=3.5) +
+  scale_x_discrete(labels = function(x){x}) +
+  ggtitle(paste("Non-mirror WK | Arabia | 1.5 R6/R7 | 1700-2000 Elo | ", length(unique(temp$matchId)), " matches")) +
   theme_bw(base_size=14)+
   theme(panel.border = element_blank(),
      axis.line = element_line(size = 0.5, linetype = "solid", colour = "#999999")
     )+
-  scale_fill_manual(values=c("#b6d8f4", "#5ba3d8"), name = "ELO cutoff") +
-  scale_colour_manual(values=c("#78b3e0", "#0974b3"))
+  scale_fill_manual(values=c("#b6d8f4", "#5ba3d8"), name = "Type") +
+  scale_colour_manual(values=c("#78b3e0", "#0974b3")) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-models.1v1.eloPlusCivPlusCutoff.plot
+models.1v1.civMatchups.plot
 dev.off()
 
-models.1v1.eloPlusCivPlusCutoff.plot
+models.1v1.civMatchups.plot
 
 
 
