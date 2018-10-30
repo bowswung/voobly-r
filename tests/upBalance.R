@@ -6,7 +6,7 @@ library(tidyr)
 
 temp <- match1v1Clean
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, playerElo > 1800 & opponentElo > 1800)
+temp <- filter(temp, playerElo < 1800 & opponentElo < 1800)
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, ((upReleaseVersion == "R6" | upReleaseVersion == "R7") & wk))
 

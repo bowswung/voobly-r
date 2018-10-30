@@ -5,7 +5,7 @@ library(tidyr)
 
 
 temp <- match1v1Clean
-temp <- filter(temp, playerElo > 1800 & opponentElo > 1800)
+temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
 temp <- filter(temp, playerCiv != opponentCiv)
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, wk==TRUE)

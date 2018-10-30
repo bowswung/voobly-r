@@ -11,64 +11,38 @@ temp <- match1v1Clean
 
 temp <- distinct(temp, MatchId, .keep_all = TRUE)
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, playerElo > 1700 & opponentElo > 1700 & playerElo < 2250 )
+temp <- filter(temp, playerElo > 1700 & opponentElo > 1700 )
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, (upReleaseVersion == "R6" | upReleaseVersion == "R7" & wk))
+
+temp <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2) >=2000, "2000+", "1700-2000"))
+temp$cutoff <- factor(temp$cutoff)
 
 civList <- sort(unique(temp$playerCiv))
 
 
-temp <- rowwise(temp) %>% mutate(playerCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), playerCiv, opponentCiv), opponentCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), opponentCiv, playerCiv), eloGapFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), eloGap, -eloGap))
+temp <- rowwise(temp) %>% mutate(
+    playerCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), playerCiv, opponentCiv),
+    opponentCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), opponentCiv, playerCiv),
+    matchup = paste(playerCiv, opponentCiv, sep="-"),
+    matchupFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), paste(playerCiv, opponentCiv, sep="-"), paste(opponentCiv, playerCiv , sep="-")),
+
+    eloGapFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), eloGap, -eloGap),
+    winnerFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), winner, !winner))
+temp$matchupFixed <- factor(temp$matchupFixed)
+
+temp$matchupFixed <- relevel(temp$matchupFixed, "Magyars-Turks")
+
+models.1v1.civMatchups.logit <- glm(winnerFixed ~ eloGapFixed + matchupFixed + cutoff:matchupFixed, data=temp, family = "binomial")
 
 
-#temp <- filter(temp, (playerCiv == "Franks" & opponentCiv == "Khmer" | playerCiv == "Khmer" & opponentCiv == "Franks"))
-#temp <- mutate(temp, playerCiv = ifelse(playerCiv == "Franks", "Franks", "NotFranks"))
-#temp <- filter(temp, eloGap < 40 & eloGap > -40)
 
-
-m <- glm(winner ~ eloGap + playerCiv:opponentCiv, data=temp, family = "binomial")
-
-
-summary(m)
-PseudoR2(m, which="Tjur")
-anova(m, test="Chisq")
+summary(models.1v1.civMatchups.logit)
+PseudoR2(models.1v1.civMatchups.logit, which="Tjur")
+anova(models.1v1.civMatchups.logit, test="Chisq")
 
 stop("asdf")
 
-drange <-  tidyr::expand(temp, opponentCiv)
-dplot <- cbind(drange, predict(m, newdata = drange, type = "link", se = TRUE))
-dplot <- within(dplot, {
-    PredictedProb <- plogis(fit)
-    LL <- plogis(fit - (1.96 * se.fit))
-    UL <- plogis(fit + (1.96 * se.fit))
-  })
-
-PseudoR2(m, which="Tjur")
-ggplot(tempPlot, aes(x=meanElogap, y = meanWinning)) +
-  geom_point(aes(size=countWins)) +
-  scale_x_continuous(limits = c(-500, 500), breaks = round(seq(-500, 500, by = 50))) +
-  #geom_bar(data = tempPlot, fill="red", stat="identity", aes(x=meanElogap, y = countWins), alpha=0.3) +
-
-  scale_size_continuous(range = c(0.1, 2))+
-  geom_ribbon(data=dplot, aes(x=eloGap, y=PredictedProb, ymin = LL,
-    ymax = UL), alpha = 1, color="#ff0000")
-
-
-stop("ADS")
-
-
-
-
-tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2) >=2000, "2000+", "1700-2000"))
-tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
-
-models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + eloGap:playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
-summary(models.1v1.eloPlusSkillGap.logit)
-confint.default(models.1v1.eloPlusSkillGap.logit)
-
-anova(models.1v1.eloPlusSkillGap.logit, test="Chisq")
-
-stop("asdf");
 
 drange <-  tidyr::expand(tempWithCutoff, playerCiv, cutoff)
 drange$eloGap = 0

@@ -5,19 +5,19 @@ library(purrr)
 
 set.seed(12)
 
-# temp <- match1v1Clean
-# temp <- arrange(temp, matchId)
-# gamesFClean <- temp %>%
-#   group_by(matchPlayerId) %>%
-#   nest()
-# # we should remove first 25 games from all 1600 players, and require everyone to have at least 15 games after that
+temp <- match1v1Clean
+temp <- arrange(temp, matchId)
+gamesFClean <- temp %>%
+  group_by(matchPlayerId) %>%
+  nest()
+# we should remove first 25 games from all 1600 players, and require everyone to have at least 15 games after that
 
 
-# gamesFClean <- rowwise(gamesFClean) %>% mutate (
-#     firstElo = first(data$playerElo),
-#     numberGames = length(data$matchId)
-#   ) %>%
-#   filter(firstElo == 1600 & numberGames > 40)
+gamesFClean <- rowwise(gamesFClean) %>% mutate (
+    firstElo = first(data$playerElo),
+    numberGames = length(data$matchId)
+  ) %>%
+  filter(firstElo == 1600 & numberGames > 40)
 
 
 sortOutData <- function (x) {
@@ -42,12 +42,30 @@ gamesF <- unnest(gamesF, data)
 gamesF$matchPlayerId <- factor(gamesF$matchPlayerId)
 
 png(filename="images/eloHistory.png", width=2000, height=800)
-ggplot(data=gamesF, aes(x=gameNumber, y=playerElo, group=matchPlayerId)) +
+p <- ggplot(data=gamesF, aes(x=gameNumber, y=playerElo, group=matchPlayerId)) +
   geom_line(aes(color=matchPlayerId))
+p
 dev.off()
+p
+
+# this is a way of getting a list of matches to remove
+
+# smurfs <- arrange(temp, matchId)
+
+
+# smurfs <- temp %>%
+#   group_by(matchPlayerId) %>%
+#   nest()
 
 
 
+# smurfs <- map_dfr(smurfs$data, function(data) {
+#   data.frame(stripMatches = ifelse(first(data$playerElo) < 1700, head(data$MatchId, 50), c(-123132131)))
+
+#   })
+# smurfs <- distinct(smurfs, stripMatches)
+# View(smurfs)
+# stop("asdf")
 
 # smurfs <- filter(gamesF, eloGapAfter20Games > 0)
 # smurfs <- sample_n(smurfs, 100)
