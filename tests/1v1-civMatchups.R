@@ -83,14 +83,14 @@ cplot <- rowwise (crange) %>% do (
 cplotSide1 <- rowwise(cplot) %>% mutate(
   civ1 = civs[1],
   civ2 = civs[2],
-  winRate = ifelse(binTest$estimate > 0.5, binTest$estimate*100, (1 - binTest$estimate)*-100),
+  winRate = (binTest$estimate - 0.5) * 100,
   winRateProb = binTest$civP
   )
 
 cplotSide2 <- rowwise(cplot) %>% mutate(
   civ1 = civs[2],
   civ2 = civs[1],
-  winRate = ifelse((1 - binTest$estimate) > 0.5, (1 - binTest$estimate)*100, binTest$estimate*-100),
+  winRate = (1 - binTest$estimate -0.5) * 100,
   winRateProb = binTest$civP
   )
 cplot <- rbind(cplotSide1, cplotSide2)
@@ -106,13 +106,13 @@ cplotDone <- corrplot(cMatrix,
   title=paste("Non-mirror WK | Arabia | 1.5 R6/R7 | 1700-2000 Elo | ", length(unique(temp$matchId)), " matches", sep=""),
   mar=c(0,0,1,0),
   p.mat=cPvals,
-  insig = "blank",
+  insig = "n",
   sig.level=c(.001, .01, .05), pch.cex = .9, pch.col = "white",
   method = "circle",
   is.corr=FALSE,
   tl.col = "#333333",
   col=colorRampPalette(c("#cf3e25", "white", "#5d995b"))(100),
-  cl.lim =c(-100,100)
+  cl.lim =c(-50,50)
   )
 
 cplotDone
