@@ -105,10 +105,56 @@ names(ratings) <- allCivs
 # stop("ADASADS")
 
 
-eloToWorkWith <- elo.withPlayer.1700
-eloToWorkWith <- filter(eloToWorkWith, matchDate > "2018-01-01 00:00:00")
-eloAverageAllTime <- group_by(eloToWorkWith, civ) %>%
-  summarise(elo = mean(eloAfter))
+# THIS IS THE MAIN CIV ELO PLOT
+# eloToWorkWith <- elo.withPlayer.1700
+# eloToWorkWith <- filter(eloToWorkWith, matchDate > "2018-01-01 00:00:00")
+# eloAverageAllTime <- group_by(eloToWorkWith, civ) %>%
+#   summarise(elo = mean(eloAfter))
+# #View(eloAverageAllTime)
+
+
+# eloForPlot <- eloToWorkWith
+# #eloForPlot <- tail(eloForPlot, -)
+# #eloDailyAverage$date <- floor_date(as.Date(eloDailyAverage$matchDate), "week")
+# #eloDailyAverage$date <- as.Date(eloDailyAverage$matchDate)
+
+# #eloDailyAverage <- group_by(eloDailyAverage, civ, date) %>%
+# #                     summarise(elo = mean(eloAfter))
+
+# eloForPlot$date <- eloForPlot$matchDate
+# eloForPlot$elo <- eloForPlot$eloAfter
+
+# eloForPlot <- filter(eloForPlot, (civ == "Franks" | civ == "Khmer" | civ == "Aztecs" | civ == "Koreans" | civ == "Celts" | civ =="Mayans" | civ == "Vietnamese"))
+# png(filename="temp/images/civEloHistory.png", width=1920, height=1080)
+# p <- ggplot(data=eloForPlot, aes(x=date, y=elo, group=civ)) +
+#         geom_point(aes(color=civ), size=0.5, alpha=0.1) +
+#         stat_smooth(method="loess", level=0.99, span=0.3, aes(color=civ, fill=civ), alpha=0.1) +
+#         theme_bw(base_size=14)+
+#         theme(panel.border = element_blank(),
+#          axis.line = element_line(size = 0.5, linetype = "solid", colour = "#999999")
+#          ) +
+#         scale_x_datetime(date_breaks="1 month")
+# p
+# dev.off()
+# p
+
+temp <- match1v1Clean
+temp <- group_by(temp, matchPlayerId) %>%
+   summarise(numPlayed = n())
+
+
+secretIds <- data.frame(
+  pid = c(123211439, 123999216, 817, 12926, 123497926, 124236797, 124043892, 124147336),
+  pname = c("TheViper", "TaToH", "JorDan_23", "DauT", "slam", "T90Official", "DraCont", "Lierrey")
+  )
+
+eloToWorkWith <- match1v1Clean
+eloToWorkWith <- filter(eloToWorkWith, wk)
+#eloToWorkWith <- filter(eloToWorkWith, MatchDate > "2018-01-01 00:00:00")
+
+eloToWorkWith <- filter(eloToWorkWith, matchPlayerId %in% secretIds$pid)
+
+eloToWorkWith$matchPlayerId <-factor(eloToWorkWith$matchPlayerId, levels=secretIds$pid, labels=secretIds$pname)
 #View(eloAverageAllTime)
 
 
@@ -120,14 +166,14 @@ eloForPlot <- eloToWorkWith
 #eloDailyAverage <- group_by(eloDailyAverage, civ, date) %>%
 #                     summarise(elo = mean(eloAfter))
 
-eloForPlot$date <- eloForPlot$matchDate
-eloForPlot$elo <- eloForPlot$eloAfter
+eloForPlot$date <- eloForPlot$MatchDate
+eloForPlot$elo <- eloForPlot$playerElo
 
-eloForPlot <- filter(eloForPlot, (civ == "Franks" | civ == "Khmer" | civ == "Aztecs" | civ == "Koreans" | civ == "Celts" | civ =="Mayans" | civ == "Vietnamese"))
-png(filename="temp/images/civEloHistory.png", width=1920, height=1080)
-p <- ggplot(data=eloForPlot, aes(x=date, y=elo, group=civ)) +
-        geom_point(aes(color=civ), size=0.5, alpha=0.1) +
-        stat_smooth(method="loess", span=0.3, aes(color=civ, fill=civ), alpha=0.1) +
+
+png(filename="temp/images/secretEloHistory.png", width=1920, height=1080)
+p <- ggplot(data=eloForPlot, aes(x=date, y=elo, group=matchPlayerId)) +
+        geom_point(aes(color=matchPlayerId), size=0.5, alpha=0.5) +
+        stat_smooth(method="loess", level=0.95, span=0.3, aes(color=matchPlayerId, fill=matchPlayerId), alpha=0.1) +
         theme_bw(base_size=14)+
         theme(panel.border = element_blank(),
          axis.line = element_line(size = 0.5, linetype = "solid", colour = "#999999")
@@ -136,7 +182,3 @@ p <- ggplot(data=eloForPlot, aes(x=date, y=elo, group=civ)) +
 p
 dev.off()
 p
-
-
-
-
