@@ -12,19 +12,16 @@ temp <- match1v1Clean
 
 temp <- distinct(temp, MatchId, .keep_all = TRUE)
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, playerElo > 1700 & opponentElo > 1700 & ((playerElo + opponentElo) /2) < 2000)
 temp <- filter(temp, matchMap == "Arabia")
 temp <- filter(temp, (upReleaseVersion == "R6" | upReleaseVersion == "R7" & wk))
 
 #temp <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2) >=2000, "2000+", "1700-2000"))
 #temp$cutoff <- factor(temp$cutoff)
 
-civList <- sort(unique(temp$playerCiv))
+# civList <- sort(unique(temp$playerCiv))
 
 
-# res <- singleCivMatchup(tempCivFixed, "Franks-Khmer")
 
-# stop("asdfsadf")
 # tempCivFixed <- rowwise(temp) %>% mutate(
 #     playerCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), playerCiv, opponentCiv),
 #     opponentCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), opponentCiv, playerCiv),
@@ -35,17 +32,15 @@ civList <- sort(unique(temp$playerCiv))
 #     winnerFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), winner, !winner))
 # tempCivFixed$matchupFixed <- factor(tempCivFixed$matchupFixed)
 
-# # tempCivFixed <- filter(tempCivFixed, abs(eloGap) >=100)
+# match1v1CleanMatchupFixed <- tempCivFixed
 
-# # tempCivFixed$matchupFixed <- relevel(tempCivFixed$matchupFixed, "Magyars-Turks")
-
-# models.1v1.civMatchups.logit <- glm(winnerFixed ~ eloGapFixed + matchupFixed, data=tempCivFixed, family = "binomial")
+# # models.1v1.civMatchups.logit <- glm(winnerFixed ~ eloGapFixed + matchupFixed, data=tempCivFixed, family = "binomial")
 
 
 
-# summary(models.1v1.civMatchups.logit)
-# PseudoR2(models.1v1.civMatchups.logit, which="Tjur")
-# anova(models.1v1.civMatchups.logit, test="Chisq")
+# # summary(models.1v1.civMatchups.logit)
+# # PseudoR2(models.1v1.civMatchups.logit, which="Tjur")
+# # anova(models.1v1.civMatchups.logit, test="Chisq")
 # stop("ASFAS")
 
 # stop("asdf")
@@ -57,30 +52,23 @@ civList <- sort(unique(temp$playerCiv))
 # }
 
 
-tempCivFixed$matchupFixed <- as.character(tempCivFixed$matchupFixed)
-tempCivFixed$matchupFixed <- factor(tempCivFixed$matchupFixed)
-drange <-  tidyr::expand(tempCivFixed, matchupFixed)
-drange$eloGapFixed = 0
-drange$type = "Predicted"
-drange <- rowwise(drange) %>%
-  mutate(countMatches = length(unique(tempCivFixed[tempCivFixed$matchupFixed == matchupFixed, ]$matchId)))
-dplot <- cbind(drange, predict(models.1v1.civMatchups.logit, newdata = drange, type = "link", se = TRUE))
-
-dplot <- rowwise (dplot) %>% do (
-    binTest = singleCivMatchup(tempCivFixed, .$matchupFixed),
-    matchupFixed = as.character(.$matchupFixed),
-    type = "Predicted",
-    countMatches = .$countMatches
-  )
-
 
 # THIS IS FOR A CORR MATRIZ
-crange <-  tidyr::expand(tempCivFixed, matchupFixed)
+tempToFocusOn <- match1v1CleanMatchupFixed
+tempToFocusOn <- filter(tempToFocusOn, ( playerElo > 1700 & opponentElo > 1700 & ((playerElo + opponentElo) /2) < 2200))
+#tempToFocusOn <- filter(tempToFocusOn, (playerElo > 1700 & opponentElo > 1700))
+tempToFocusOn <- filter(tempToFocusOn, abs(eloGap) > 100)
+
+#tempToFocusOn <- filter(tempToFocusOn, MatchDate > "2018-06-01 00:00:00")
+#tempToFocusOn <- filter(tempToFocusOn, upReleaseVersion == "R7")
+tempToFocusOn <- filter(tempToFocusOn, MatchDate > "2018-01-01 00:00:00")
+
+crange <-  tidyr::expand(tempToFocusOn, matchupFixed)
 cplot <- rowwise (crange) %>% do (
-    binTest = singleCivMatchup(tempCivFixed, .$matchupFixed),
+    binTest = singleCivMatchup(tempToFocusOn, .$matchupFixed),
     matchupFixed = as.character(.$matchupFixed),
     civs = unlist(strsplit(as.character(.$matchupFixed), "-", TRUE)),
-    countMatches = length(unique(tempCivFixed[tempCivFixed$matchupFixed == .$matchupFixed, ]$matchId))
+    countMatches = length(unique(tempToFocusOn[tempToFocusOn$matchupFixed == .$matchupFixed, ]$matchId))
   )
 
 cplotSide1 <- rowwise(cplot) %>% mutate(
@@ -102,20 +90,44 @@ cplot$civ2 <- factor(cplot$civ2)
 cMatrix <- xtabs(winRate ~ civ1 + civ2, data=cplot)
 cPvals <- xtabs(winRateProb ~ civ1 + civ2, data=cplot)
 
-png(filename="temp/images/1v1-1700-2000-civCorrPlot.png", width=1200, height=1200)
-
+png(filename="temp/images/eloGap-civCorrPlot.png", width=1200, height=1200)
 
 cplotDone <- corrplot(cMatrix,
-  title=paste("Non-mirror WK | Arabia | 1.5 R6/R7 | 1700-2000 Elo | ", length(unique(temp$matchId)), " matches", sep=""),
-  mar=c(0,0,1,0),
+  title=paste("Matchup Balance | Non-mirror WK after January 2018 | Arabia | 1700-2200 with >100 Elo gap | ", length(unique(tempToFocusOn$matchId)), " matches", sep=""),
+  mar=c(0,0,2,0),
   p.mat=cPvals,
   insig = "n",
   sig.level=c(.001, .01, .05), pch.cex = .9, pch.col = "white",
   method = "circle",
   is.corr=FALSE,
   tl.col = "#333333",
-  col=colorRampPalette(c("#cf3e25", "white", "#5d995b"))(100)
- # cl.lim =c(-50,50)
+  col=colorRampPalette(c("#cf3e25", "white", "#5d995b"))(100),
+  #cl.lim =c(-0.5,0.5),
+  number.cex=1,
+  tl.cex = 1.2,
+  cl.cex=1.2
+  )
+
+dev.off()
+
+png(filename="temp/images/eloGap-civCorrPlotNumber.png", width=1600, height=1600)
+
+
+cplotDone <- corrplot(cMatrix,
+  title=paste("Matchup Balance | Non-mirror WK  after January 2018 | Arabia | 1700-2200 with >100 Elo gap | ", length(unique(tempToFocusOn$matchId)), " matches", sep=""),
+  mar=c(0,0,2,0),
+  p.mat=cPvals,
+  insig = "n",
+  sig.level=c(.001, .01, .05), pch.cex = .9, pch.col = "white",
+  method = "color",
+  is.corr=FALSE,
+  tl.col = "#333333",
+  col=colorRampPalette(c("#cf3e25", "white", "#5d995b"))(100),
+  #cl.lim =c(-0.4,0.4),
+  number.cex=1,
+  addCoef.col="#333333",
+  tl.cex = 1.5,
+  cl.cex=1.5
   )
 
 

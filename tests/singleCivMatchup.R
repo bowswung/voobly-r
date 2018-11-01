@@ -17,13 +17,11 @@ singleCivMatchup <- function(data, matchupTarget) {
   # s <- unlist(strsplit(matchupTarget, "-", TRUE))
   # civ1 <- s[1]
   # civ2 <- s[2]
-  dataF <<- data
-  dataF <- dataF[dataF$matchupFixed == matchupTarget, ]
+  dataF <- data[data$matchupFixed == matchupTarget, ]
 
   dataF <- mutate(dataF, expectedRate = 1/(1+10^((-eloGapFixed)/400)))
   expectedRate <- mean(dataF$expectedRate)
-  print(as.character(matchupTarget))
-  print(expectedRate)
+
 
 
   nWins <- length(dataF[dataF$winnerFixed, ]$matchId)
@@ -31,6 +29,9 @@ singleCivMatchup <- function(data, matchupTarget) {
   res <-binom.test(nWins, nTotal, expectedRate)
   ci <- BinomCI(nWins, nTotal)
 
+  print(as.character(matchupTarget))
+  print(expectedRate)
+  print(nTotal)
   # m <- glm(winner ~ eloGap + playerCiv, data=dataF, family = binomial)
   # print(exp(confint(m)))
 
