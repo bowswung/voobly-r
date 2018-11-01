@@ -35,7 +35,9 @@ civList <- sort(unique(temp$playerCiv))
 #     winnerFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), winner, !winner))
 # tempCivFixed$matchupFixed <- factor(tempCivFixed$matchupFixed)
 
-# tempCivFixed$matchupFixed <- relevel(tempCivFixed$matchupFixed, "Magyars-Turks")
+# # tempCivFixed <- filter(tempCivFixed, abs(eloGap) >=100)
+
+# # tempCivFixed$matchupFixed <- relevel(tempCivFixed$matchupFixed, "Magyars-Turks")
 
 # models.1v1.civMatchups.logit <- glm(winnerFixed ~ eloGapFixed + matchupFixed, data=tempCivFixed, family = "binomial")
 
@@ -44,14 +46,15 @@ civList <- sort(unique(temp$playerCiv))
 # summary(models.1v1.civMatchups.logit)
 # PseudoR2(models.1v1.civMatchups.logit, which="Tjur")
 # anova(models.1v1.civMatchups.logit, test="Chisq")
+# stop("ASFAS")
 
 # stop("asdf")
 
 
-flipMatchup <- function(x) {
-  s <- unlist(strsplit(x, "-", TRUE))
-  paste(s[2], "-", s[1], sep="")
-}
+# flipMatchup <- function(x) {
+#   s <- unlist(strsplit(x, "-", TRUE))
+#   paste(s[2], "-", s[1], sep="")
+# }
 
 
 tempCivFixed$matchupFixed <- as.character(tempCivFixed$matchupFixed)
@@ -83,14 +86,14 @@ cplot <- rowwise (crange) %>% do (
 cplotSide1 <- rowwise(cplot) %>% mutate(
   civ1 = civs[1],
   civ2 = civs[2],
-  winRate = (binTest$estimate - 0.5) * 100,
+  winRate = (binTest$estimate),
   winRateProb = binTest$civP
   )
 
 cplotSide2 <- rowwise(cplot) %>% mutate(
   civ1 = civs[2],
   civ2 = civs[1],
-  winRate = (1 - binTest$estimate -0.5) * 100,
+  winRate = -(binTest$estimate),
   winRateProb = binTest$civP
   )
 cplot <- rbind(cplotSide1, cplotSide2)
@@ -111,13 +114,13 @@ cplotDone <- corrplot(cMatrix,
   method = "circle",
   is.corr=FALSE,
   tl.col = "#333333",
-  col=colorRampPalette(c("#cf3e25", "white", "#5d995b"))(100),
-  cl.lim =c(-50,50)
+  col=colorRampPalette(c("#cf3e25", "white", "#5d995b"))(100)
+ # cl.lim =c(-50,50)
   )
 
-cplotDone
+
 dev.off()
-cplotDone
+
 
 stop("asdf")
 

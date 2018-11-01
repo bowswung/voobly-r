@@ -7,6 +7,11 @@ library(purrr)
 library(DescTools)
 require(MASS)
 
+rateFromElo <- function(elo1, elo2) {
+
+  #P(A) = 1/(1+10^m) where m is the rating difference (rating(B)-rating(A)) divided by 400
+  1/(1+10^((elo2-elo1)/400))
+}
 
 singleCivMatchup <- function(data, matchupTarget) {
   # s <- unlist(strsplit(matchupTarget, "-", TRUE))
@@ -14,9 +19,16 @@ singleCivMatchup <- function(data, matchupTarget) {
   # civ2 <- s[2]
   dataF <<- data
   dataF <- dataF[dataF$matchupFixed == matchupTarget, ]
+
+  dataF <- mutate(dataF, expectedRate = 1/(1+10^((-eloGapFixed)/400)))
+  expectedRate <- mean(dataF$expectedRate)
+  print(as.character(matchupTarget))
+  print(expectedRate)
+
+
   nWins <- length(dataF[dataF$winnerFixed, ]$matchId)
   nTotal <- length(dataF$matchId)
-  res <- binom.test(nWins, nTotal, 0.5)
+  res <-binom.test(nWins, nTotal, expectedRate)
   ci <- BinomCI(nWins, nTotal)
 
   # m <- glm(winner ~ eloGap + playerCiv, data=dataF, family = binomial)
@@ -24,7 +36,12 @@ singleCivMatchup <- function(data, matchupTarget) {
 
   # print(res)
   # print(ci)
+  if (nTotal > 10) {
+  estimateDiff <- ci[1] - expectedRate
+  } else {
+    estimateDiff = 0
+  }
 
-  list(civP =res$p.value, estimate = ci[1], estimateLwr = ci[2], estimateUpr = ci[3])
+  list(civP =res$p.value, estimate = estimateDiff, estimateLwr = ci[2], estimateUpr = ci[3])
 
 }
