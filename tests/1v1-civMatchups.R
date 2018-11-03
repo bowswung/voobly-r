@@ -68,10 +68,11 @@ source("tests/singleCivMatchup.R")
 # THIS IS FOR A CORR MATRIZ
 tempToFocusOn <- match1v1CleanMatchupFixed
 #tempToFocusOn <- filter(tempToFocusOn, abs(eloGapFixed) >= 100)
-tempToFocusOn <- filter(tempToFocusOn, ( playerElo > 1700 & opponentElo > 1700 & ((playerElo + opponentElo) /2) < 2000))
-#tempToFocusOn <- filter(tempToFocusOn, (playerElo > 1700 & opponentElo > 1700))
+#tempToFocusOn <- filter(tempToFocusOn, ( playerElo > 1700 & opponentElo > 1700 & ((playerElo + opponentElo) /2) < 2000))
+#tempToFocusOn <- filter(tempToFocusOn, ( ((playerElo + opponentElo) /2) > 2000))
+tempToFocusOn <- filter(tempToFocusOn, (playerElo > 2000 & opponentElo > 2000))
 
-tempToFocusOn <- filter(tempToFocusOn, MatchDate > "2018-06-01 00:00:00")
+tempToFocusOn <- filter(tempToFocusOn, MatchDate > "2018-06-01 00:00:00" )
 tempToFocusOn <- filter(tempToFocusOn, wk & matchMap == "Arabia")
 #tempToFocusOn <- filter(tempToFocusOn, playerCivFixed != opponentCivFixed)
 #tempToFocusOn <- filter(tempToFocusOn, upReleaseVersion == "R7")
@@ -110,7 +111,7 @@ cPvals <- xtabs(winRateProb ~ civ1 + civ2, data=cplot)
 png(filename="temp/images/civCorrPlotWithMirrors.png", width=1200, height=1200)
 
 cplotDone <- corrplot(cMatrix,
-  title=paste("Matchup Balance | WK after June 2018 | Arabia | 1700-2000 | ", length(unique(tempToFocusOn$matchId)), " matches", sep=""),
+  title=paste("Matchup Balance | WK after June 2018 | Arabia | 2000+ | ", length(unique(tempToFocusOn$matchId)), " matches", sep=""),
   mar=c(0,0,2,0),
   p.mat=cPvals,
   insig = "n",
@@ -119,18 +120,18 @@ cplotDone <- corrplot(cMatrix,
   is.corr=FALSE,
   tl.col = "#333333",
   col=colorRampPalette(c("#cf3e25", "white", "#5d995b"))(100),
-  cl.lim =c(-0.4,0.4),
+  #cl.lim =c(-0.4,0.4),
   number.cex=1,
   tl.cex = 1.2,
   cl.cex=1.2
   )
 
 dev.off()
-png(filename="temp/images/civCorrPlotWithMirrorsNumber.png", width=1600, height=1600)
+png(filename="temp/images/eloGap-civCorrPlotWithMirrorsNumber.png", width=1600, height=1600)
 
 
 cplotDone <- corrplot(cMatrix,
-  title=paste("Matchup Balance | WK after June 2018 | Arabia | 1700-2000 | ", length(unique(tempToFocusOn$matchId)), " matches", sep=""),
+  title=paste("Matchup Balance | WK after June 2018 | Arabia | 2000+ | ", length(unique(tempToFocusOn$matchId)), " matches", sep=""),
   mar=c(0,0,2,0),
   p.mat=cPvals,
   insig = "n",
@@ -139,7 +140,7 @@ cplotDone <- corrplot(cMatrix,
   is.corr=FALSE,
   tl.col = "#333333",
   col=colorRampPalette(c("#cf3e25", "white", "#5d995b"))(100),
-  cl.lim =c(-0.4,0.4),
+  #cl.lim =c(-0.4,0.4),
   number.cex=1,
   addCoef.col="#333333",
   tl.cex = 1.5,
