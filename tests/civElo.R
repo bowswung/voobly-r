@@ -9,11 +9,11 @@ library(hues)
 temp <- match1v1Clean
 temp <- distinct(temp, MatchId, .keep_all = TRUE)
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, matchMap == "Arabia")
+temp <- filter(temp, matchMap == "Arena")
 #temp <- filter(temp, (upReleaseVersion == "R6" | upReleaseVersion == "R7" & wk))
 temp <- filter(temp, (wk))
-#temp <- filter(temp, ( playerElo > 1700 & opponentElo > 1700 & (playerElo + opponentElo) /2) < 2000)
-temp <- filter(temp, ( (playerElo > 2000 & opponentElo > 2000)))
+temp <- filter(temp, ( playerElo > 1700 & opponentElo > 1700 & (playerElo + opponentElo) /2) < 2000)
+#temp <- filter(temp, ( (playerElo > 2200 & opponentElo > 2200)))
 temp <- arrange(temp, MatchDate)
 
 
@@ -93,71 +93,71 @@ temp$opponentCiv <- factor(temp$opponentCiv)
 #   ratings[tempToWorkWith$loseCiv[i]] = loseCivEloAfter
 # }
 # elo <- data.frame
-# elo.withPlayer.2000 <- data.frame(matchDate = elo.matchDates, civ=elo.civ, eloBefore=elo.eloBefore, eloChange = elo.eloChange, eloAfter = elo.eloAfter)
+# elo.withPlayer.1700.arena <- data.frame(matchDate = elo.matchDates, civ=elo.civ, eloBefore=elo.eloBefore, eloChange = elo.eloChange, eloAfter = elo.eloAfter)
 # stop("ADASADS")
 
 
 
-temp <- match1v1Clean
+# temp <- match1v1Clean
 
-# secretIds <- data.frame(
-#   pid = c(123211439, 123999216, 817, 12926, 123497926, 124236797, 124043892, 124147336),
-#   pname = c("TheViper", "TaToH", "JorDan_23", "Our Lord and Savior", "slam", "T90Official", "DraCont", "Lierrey")
+# # secretIds <- data.frame(
+# #   pid = c(123211439, 123999216, 817, 12926, 123497926, 124236797, 124043892, 124147336),
+# #   pname = c("TheViper", "TaToH", "JorDan_23", "Our Lord and Savior", "slam", "T90Official", "DraCont", "Lierrey")
+# #   )
+# targetIds <- data.frame(
+#   pid = c(12926, 123211439, 124236797, 124043892, 124147336, 123303397, 123636492, 124954867),
+#   pname = c("Our Lord and Savior", "TheViper",  "T90", "DraCont", "Lierrey", "Fat Dragon", "Yo", "Hera")
 #   )
-targetIds <- data.frame(
-  pid = c(12926, 123211439, 124236797, 124043892, 124147336, 123303397, 123636492, 124954867),
-  pname = c("Our Lord and Savior", "TheViper",  "T90", "DraCont", "Lierrey", "Fat Dragon", "Yo", "Hera")
-  )
 
-targetIds <- arrange(targetIds, pname)
+# targetIds <- arrange(targetIds, pname)
 
-eloToWorkWith <- match1v1Clean
-eloToWorkWith <- filter(eloToWorkWith, wk)
-eloToWorkWith <- filter(eloToWorkWith, MatchDate > "2018-01-01 00:00:00")
+# eloToWorkWith <- match1v1Clean
+# eloToWorkWith <- filter(eloToWorkWith, wk)
+# eloToWorkWith <- filter(eloToWorkWith, MatchDate > "2018-01-01 00:00:00")
 
-eloToWorkWith <- filter(eloToWorkWith, matchPlayerId %in% targetIds$pid)
+# eloToWorkWith <- filter(eloToWorkWith, matchPlayerId %in% targetIds$pid)
 
-eloToWorkWith <- mutate(eloToWorkWith, playerElo = ifelse(matchPlayerId == 12926, 2800, playerElo))
+# eloToWorkWith <- mutate(eloToWorkWith, playerElo = ifelse(matchPlayerId == 12926, 2800, playerElo))
 
-eloToWorkWith$matchPlayerId <-factor(eloToWorkWith$matchPlayerId, levels=targetIds$pid, labels=targetIds$pname)
-#View(eloAverageAllTime)
-eloToWorkWith$matchPlayerId <-relevel(eloToWorkWith$matchPlayerId, ref="Our Lord and Savior")
+# eloToWorkWith$matchPlayerId <-factor(eloToWorkWith$matchPlayerId, levels=targetIds$pid, labels=targetIds$pname)
+# #View(eloAverageAllTime)
+# eloToWorkWith$matchPlayerId <-relevel(eloToWorkWith$matchPlayerId, ref="Our Lord and Savior")
 
-eloForPlot <- eloToWorkWith
-#eloForPlot <- tail(eloForPlot, -)
-#eloDailyAverage$date <- floor_date(as.Date(eloDailyAverage$matchDate), "week")
-#eloDailyAverage$date <- as.Date(eloDailyAverage$matchDate)
+# eloForPlot <- eloToWorkWith
+# #eloForPlot <- tail(eloForPlot, -)
+# #eloDailyAverage$date <- floor_date(as.Date(eloDailyAverage$matchDate), "week")
+# #eloDailyAverage$date <- as.Date(eloDailyAverage$matchDate)
 
-#eloDailyAverage <- group_by(eloDailyAverage, civ, date) %>%
-#                     summarise(elo = mean(eloAfter))
+# #eloDailyAverage <- group_by(eloDailyAverage, civ, date) %>%
+# #                     summarise(elo = mean(eloAfter))
 
-eloForPlot$date <- eloForPlot$MatchDate
-eloForPlot$elo <- eloForPlot$playerElo
-eloForPlot <- select(eloForPlot, date, elo, matchPlayerId)
-eloForPlot <- rbind(eloForPlot, list(date = "2018-01-01 01:00:00", elo=2800, matchPlayerId = "Our Lord and Savior"))
+# eloForPlot$date <- eloForPlot$MatchDate
+# eloForPlot$elo <- eloForPlot$playerElo
+# eloForPlot <- select(eloForPlot, date, elo, matchPlayerId)
+# eloForPlot <- rbind(eloForPlot, list(date = "2018-01-01 01:00:00", elo=2800, matchPlayerId = "Our Lord and Savior"))
 
-sapFioriColors = c("#de7b45", "#5ba3d8", "#4d9f79", "#de6780", "#877cce", "#40a3b3", "#3582f1", "#b15f9f", "#708993", "#e2776e", "#2e6c96")
+# sapFioriColors = c("#de7b45", "#5ba3d8", "#4d9f79", "#de6780", "#877cce", "#40a3b3", "#3582f1", "#b15f9f", "#708993", "#e2776e", "#2e6c96")
 
 
-png(filename="temp/images/secretEloHistory.png", width=1920, height=1080)
-p <- ggplot(data=eloForPlot, aes(x=date, y=elo, group=matchPlayerId)) +
-        geom_point(aes(color=matchPlayerId), size=0.5, alpha=0.5) +
-        stat_smooth(method="loess", level=0.95, span=0.3, aes(color=matchPlayerId, fill=matchPlayerId), alpha=0.1) +
-        theme_bw(base_size=20)+
-        theme(panel.border = element_blank(),
-         axis.line = element_line(size = 0.5, linetype = "solid", colour = "#999999")
-         ) +
-        scale_x_datetime(date_breaks="1 month") +
-        scale_y_continuous(breaks=((16:28)*100)) +
-        scale_fill_manual(values=sapFioriColors, name = "Player") +
-        scale_colour_manual(values=sapFioriColors, name = "Player") +
-        ggtitle(paste("Elo over time | Our Lord and Savior + some scrubs"  , sep="")) +
-        xlab('Date') +
-        ylab('Player Elo')
-p
-dev.off()
-p
-stop("Adas")
+# png(filename="temp/images/secretEloHistory.png", width=1920, height=1080)
+# p <- ggplot(data=eloForPlot, aes(x=date, y=elo, group=matchPlayerId)) +
+#         geom_point(aes(color=matchPlayerId), size=0.5, alpha=0.5) +
+#         stat_smooth(method="loess", level=0.95, span=0.3, aes(color=matchPlayerId, fill=matchPlayerId), alpha=0.1) +
+#         theme_bw(base_size=20)+
+#         theme(panel.border = element_blank(),
+#          axis.line = element_line(size = 0.5, linetype = "solid", colour = "#999999")
+#          ) +
+#         scale_x_datetime(date_breaks="1 month") +
+#         scale_y_continuous(breaks=((16:28)*100)) +
+#         scale_fill_manual(values=sapFioriColors, name = "Player") +
+#         scale_colour_manual(values=sapFioriColors, name = "Player") +
+#         ggtitle(paste("Elo over time | Our Lord and Savior + some scrubs"  , sep="")) +
+#         xlab('Date') +
+#         ylab('Player Elo')
+# p
+# dev.off()
+# p
+# stop("Adas")
 
 
 
@@ -170,7 +170,7 @@ sapFioriColors = c("#5ba3d8", "#de7b45", "#4d9f79", "#de6780", "#877cce", "#40a3
 for (i in c(1,9,17,25)) {
 
   civsToWorkOn <- allCivsToWorkOn[i:(i+7 + ifelse(i == 25, -1, 0))]
-  eloToWorkWith <- elo.withPlayer.1700
+  eloToWorkWith <- elo.withPlayer.1700.arena
   eloToWorkWith <- filter(eloToWorkWith, matchDate > "2018-01-01 00:00:00")
   eloToWorkWithTotalLength <- length(eloToWorkWith$matchDate)/2
 
@@ -188,7 +188,7 @@ for (i in c(1,9,17,25)) {
   set.seed(2)
   #colors <- unname(iwanthue(31, hmin=0, hmax=360, cmin=0, cmax=100, lmin=30, lmax=100, random = TRUE))
 
-  fName <- paste("temp/images/2000-",civsToWorkOn[1],"-",civsToWorkOn[length(civsToWorkOn)], ".png", sep="")
+  fName <- paste("temp/images/1700-arena-",civsToWorkOn[1],"-",civsToWorkOn[length(civsToWorkOn)], ".png", sep="")
   png(filename=fName, width=1920, height=1080)
   p <- ggplot(data=eloForPlot, aes(x=date, y=elo, group=civ)) +
         geom_point(aes(color=civ), size=0.5, alpha=0.2) +
@@ -201,7 +201,7 @@ for (i in c(1,9,17,25)) {
         scale_fill_manual(values=sapFioriColors, name = "Civ", labels=legendLabels) +
         scale_colour_manual(values=sapFioriColors, name = "Civ", labels=legendLabels) +
         coord_cartesian(ylim = c(1450, 1750)) +
-        ggtitle(paste("Simulated Civ Elo | Non-mirror WK | Arabia | 1700-2000 | ", eloToWorkWithTotalLength, " matches"  , sep="")) +
+        ggtitle(paste("Simulated Civ Elo | Non-mirror WK | Arena | 1700-2000 | ", eloToWorkWithTotalLength, " matches"  , sep="")) +
         xlab('Date') +
         ylab('Simulated Civ Elo')
 

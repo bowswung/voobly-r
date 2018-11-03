@@ -26,23 +26,30 @@ singleCivMatchup <- function(data, matchupTarget) {
 
   nWins <- length(dataF[dataF$winnerFixed, ]$matchId)
   nTotal <- length(dataF$matchId)
-  res <-binom.test(nWins, nTotal, expectedRate)
-  ci <- BinomCI(nWins, nTotal)
+
 
   print(as.character(matchupTarget))
   print(expectedRate)
+  print(nWins)
   print(nTotal)
+  if (!(nTotal > 0)) {
+    list(civP = 1, estimate=0, estimateLwr=0, estimateUpr=0)
+  } else {
+  res <-binom.test(nWins, nTotal, expectedRate)
+  ci <- BinomCI(nWins, nTotal)
+
   # m <- glm(winner ~ eloGap + playerCiv, data=dataF, family = binomial)
   # print(exp(confint(m)))
 
   # print(res)
   # print(ci)
-  if (nTotal > 10) {
   estimateDiff <- ci[1] - expectedRate
-  } else {
-    estimateDiff = 0
-  }
+  # this is just for the sake more comparable charts
+  estimateDiff <- ifelse(estimateDiff > 0.5, 0.5, estimateDiff)
+  estimateDiff <- ifelse(estimateDiff < -0.5, -0.5, estimateDiff)
 
-  list(civP =res$p.value, estimate = estimateDiff, estimateLwr = ci[2], estimateUpr = ci[3])
 
+  list(civP =res$p.value, estimate = estimateDiff, estimateLwr = ci[2] - expectedRate, estimateUpr = ci[3] - expectedRate)
+
+}
 }

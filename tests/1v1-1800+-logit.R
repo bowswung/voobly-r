@@ -9,67 +9,106 @@ library(DescTools)
 
 temp <- match1v1Clean
 
-temp <- distinct(temp, MatchId, .keep_all = TRUE)
+#temp <- distinct(temp, MatchId, .keep_all = TRUE)
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, playerElo > 1700 & opponentElo > 1700 & playerElo < 2250 )
+temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
 temp <- filter(temp, matchMap == "Arabia")
-temp <- filter(temp, (upReleaseVersion == "R6" | upReleaseVersion == "R7" & wk))
-
-civList <- sort(unique(temp$playerCiv))
-
-
-temp <- rowwise(temp) %>% mutate(playerCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), playerCiv, opponentCiv), opponentCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), opponentCiv, playerCiv), eloGapFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), eloGap, -eloGap))
+#temp <- filter(temp, (upReleaseVersion == "R6" | upReleaseVersion == "R7" & wk))
+temp <- filter(temp, wk)
 
 
-#temp <- filter(temp, (playerCiv == "Franks" & opponentCiv == "Khmer" | playerCiv == "Khmer" & opponentCiv == "Franks"))
-#temp <- mutate(temp, playerCiv = ifelse(playerCiv == "Franks", "Franks", "NotFranks"))
-#temp <- filter(temp, eloGap < 40 & eloGap > -40)
+# civList <- sort(unique(temp$playerCiv))
 
-
-m <- glm(winner ~ eloGap + playerCiv:opponentCiv, data=temp, family = "binomial")
-
-
-summary(m)
-PseudoR2(m, which="Tjur")
-anova(m, test="Chisq")
-
-stop("asdf")
-
-drange <-  tidyr::expand(temp, opponentCiv)
-dplot <- cbind(drange, predict(m, newdata = drange, type = "link", se = TRUE))
-dplot <- within(dplot, {
-    PredictedProb <- plogis(fit)
-    LL <- plogis(fit - (1.96 * se.fit))
-    UL <- plogis(fit + (1.96 * se.fit))
-  })
-
-PseudoR2(m, which="Tjur")
-ggplot(tempPlot, aes(x=meanElogap, y = meanWinning)) +
-  geom_point(aes(size=countWins)) +
-  scale_x_continuous(limits = c(-500, 500), breaks = round(seq(-500, 500, by = 50))) +
-  #geom_bar(data = tempPlot, fill="red", stat="identity", aes(x=meanElogap, y = countWins), alpha=0.3) +
-
-  scale_size_continuous(range = c(0.1, 2))+
-  geom_ribbon(data=dplot, aes(x=eloGap, y=PredictedProb, ymin = LL,
-    ymax = UL), alpha = 1, color="#ff0000")
-
-
-stop("ADS")
+# temp <- arrange(temp, eloGap)
+# temp$groupingVar <- rep(seq.int(0, length(temp$matchId)), each=500, length.out=length(temp$matchId))
 
 
 
 
-tempWithCutoff <- mutate(temp, cutoff = ifelse(((playerElo + opponentElo) /2) >=2000, "2000+", "1700-2000"))
-tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
+# m <- glm(winner ~ eloGap, data=temp, family = "binomial")
+# drange <-  tidyr::expand(temp, eloGap = -800:800)
+# dplot <- cbind(drange, predict(m, newdata = drange, type = "link", se = TRUE))
+# dplot <- within(dplot, {
+#     PredictedProb <- plogis(fit)
+#     LL <- plogis(fit - (1.96 * se.fit))
+#     UL <- plogis(fit + (1.96 * se.fit))
+#   })
 
-models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + playerCiv + eloGap:playerCiv + cutoff + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
+# tempPlot <- temp %>%
+#     group_by(groupingVar) %>%
+#     summarise(expected = 1/(1+10^((-mean(eloGap))/400)), meanWinning = mean(winner), count=n(), meanElogap = mean(eloGap))
+
+# ggplot(tempPlot, aes(x=meanElogap, y = meanWinning)) +
+#   geom_point(aes(size=count), alpha=0.1) +
+#   scale_size_continuous(range = c(0.1, 2))+
+#    scale_y_log10() +
+#   stat_smooth(method="loess", level=0.99, alpha=0.2) +
+#   stat_smooth(method="loess", level=0.99, alpha=0.2, aes(y=expected), color="#00ff00") +
+#   scale_x_continuous(limits = c(-500, 500), breaks = round(seq(-500, 500, by = 50))) +
+#   geom_ribbon(data=dplot, aes(x=eloGap, y=PredictedProb, ymin = LL, ymax = UL), alpha = 1, color="#ff0000")
+# stop("ASFSD")
+
+# temp <- rowwise(temp) %>% mutate(playerCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), playerCiv, opponentCiv), opponentCivFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), opponentCiv, playerCiv), eloGapFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), eloGap, -eloGap))
+
+
+# #temp <- filter(temp, (playerCiv == "Franks" & opponentCiv == "Khmer" | playerCiv == "Khmer" & opponentCiv == "Franks"))
+# #temp <- mutate(temp, playerCiv = ifelse(playerCiv == "Franks", "Franks", "NotFranks"))
+# #temp <- filter(temp, eloGap < 40 & eloGap > -40)
+
+
+# m <- glm(winner ~ eloGap + playerCiv:opponentCiv, data=temp, family = "binomial")
+
+
+# summary(m)
+# PseudoR2(m, which="Tjur")
+# anova(m, test="Chisq")
+
+# stop("asdf")
+
+# drange <-  tidyr::expand(temp, opponentCiv)
+# dplot <- cbind(drange, predict(m, newdata = drange, type = "link", se = TRUE))
+# dplot <- within(dplot, {
+#     PredictedProb <- plogis(fit)
+#     LL <- plogis(fit - (1.96 * se.fit))
+#     UL <- plogis(fit + (1.96 * se.fit))
+#   })
+
+# PseudoR2(m, which="Tjur")
+# ggplot(tempPlot, aes(x=meanElogap, y = meanWinning)) +
+#   geom_point(aes(size=countWins)) +
+#   scale_x_continuous(limits = c(-500, 500), breaks = round(seq(-500, 500, by = 50))) +
+#   #geom_bar(data = tempPlot, fill="red", stat="identity", aes(x=meanElogap, y = countWins), alpha=0.3) +
+
+#   scale_size_continuous(range = c(0.1, 2))+
+#   geom_ribbon(data=dplot, aes(x=eloGap, y=PredictedProb, ymin = LL,
+#     ymax = UL), alpha = 1, color="#ff0000")
+
+
+# stop("ADS")
+
+temp <- match1v1CleanMatchupFixed
+
+temp <- filter(temp, matchupFixed == "Goths-Mayans")
+
+
+tempWithCutoff <- mutate(temp, cutoff = ifelse(MatchDuration < 1800, "<1800", "1800+"))
+#tempWithCutoff$cutoff <- factor(tempWithCutoff$cutoff)
+# excludeCivs <- c("Khmer", "Vietnamese", "Saracens", "Portuguese")
+# tempWithCutoff <- filter(tempWithCutoff, (!(playerCiv %in% excludeCivs) & !(opponentCiv %in% excludeCivs)))
+#tempWithCutoff <- filter(tempWithCutoff, eloGap <= -200)
+tempWithCutoff$playerCiv <- factor(tempWithCutoff$playerCiv)
+tempWithCutoff$opponentCiv <- factor(tempWithCutoff$opponentCiv)
+
+tempWithCutoff$playerCiv <- droplevels(tempWithCutoff$playerCiv)
+tempWithCutoff$opponentCiv <- droplevels(tempWithCutoff$opponentCiv)
+
+models.1v1.eloPlusSkillGap.logit <- glm(winner ~ eloGap + cutoff:playerCiv, data=tempWithCutoff, family = "binomial")
 summary(models.1v1.eloPlusSkillGap.logit)
 confint.default(models.1v1.eloPlusSkillGap.logit)
 
 anova(models.1v1.eloPlusSkillGap.logit, test="Chisq")
-
-stop("asdf");
-
+PseudoR2(models.1v1.eloPlusSkillGap.logit, which="Tjur")
+#stop("Adsd")
 drange <-  tidyr::expand(tempWithCutoff, playerCiv, cutoff)
 drange$eloGap = 0
 drange <- rowwise(drange) %>%
@@ -80,10 +119,10 @@ dplot <- within(dplot, {
     LL <- plogis(fit - (1.96 * se.fit))
     UL <- plogis(fit + (1.96 * se.fit))
   })
-dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="2000+", PredictedProb, 0))
+dplot <- mutate(dplot, probForOrder = ifelse(cutoff =="1700-2000", PredictedProb, 0))
 dplot$playerCiv <- reorder(dplot$playerCiv, dplot$probForOrder)
 
-png(filename="images/1v1-1700-civPlusCutoff.png", width=1600, height=600)
+png(filename="temp/images/1v1-1700-civPlusCutoff.png", width=1600, height=600)
 
 models.1v1.eloPlusCivPlusCutoff.plot <- ggplot(dplot, aes(fill=cutoff, x = playerCiv, y = PredictedProb)) +
   labs(x = "Player civ", y = "Probability of winning match") +
@@ -140,6 +179,9 @@ View(tempPlot)
 stop("asfsdf")
 
 
+temp <- arrange(temp, eloGap)
+temp$groupingVar <- rep(seq.int(0, length(temp$matchId)), each=200, length.out=length(temp$matchId))
+
 
 m <- glm(winner ~ eloGap, data=temp, family = "binomial")
 drange <-  tidyr::expand(temp, eloGap = -800:800)
@@ -150,13 +192,12 @@ dplot <- within(dplot, {
     UL <- plogis(fit + (1.96 * se.fit))
   })
 
+tempPlot <- temp %>%
+    group_by(groupingVar) %>%
+    summarise(meanWinning = mean(winner), meanElogap = mean(eloGap))
 
-ggplot(tempPlot, aes(x=eloGapStepped, y = meanWinning)) +
-  geom_point(aes(size=countWins)) +
+ggplot(tempPlot, aes(x=meanElogap, y = meanWinning)) +
   scale_x_continuous(limits = c(-500, 500), breaks = round(seq(-500, 500, by = 50))) +
-  geom_bar(data = tempPlot, fill="red", stat="identity", aes(x=eloGapStepped, y = countWins), alpha=0.3) +
-
-  scale_size_continuous(range = c(0.1, 2))+
   geom_ribbon(data=dplot, aes(x=eloGap, y=PredictedProb, ymin = LL,
     ymax = UL), alpha = 1, color="#ff0000")
 
