@@ -5,17 +5,118 @@ library(tidyr)
 library(rms)
 library(purrr)
 library(DescTools)
+library(caret)
+library(randomForest)
+
+eloToWorkWith <- elo.withPlayer.1700
+
+eloAveragesLastX <- filter(eloToWorkWith, matchDate > "2018-01-01 00:00:00") %>%
+  group_by(civ) %>%
+  summarise(elo = mean(eloAfter))
+
+eloAveragesLastX$civ <- factor(eloAveragesLastX$civ)
+
+temp <- match1v1CleanMatchupFixed
+temp <- filter(temp, playerCivFixed != opponentCivFixed)
+temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
+temp <- filter(temp, matchMap == "Arabia")
+temp <- filter(temp, wk)
+temp <- filter(temp, eloGapFixed < -100)
+#temp <- sample_n(match1v1CleanMatchupFixed, 10000)
+
+data <- rowwise(temp) %>%
+  mutate(
+    predictionsBoth = rateFromElo(eloAveragesLastX$elo[eloAveragesLastX$civ == playerCivFixed] + eloGapFixed, eloAveragesLastX$elo[eloAveragesLastX$civ == opponentCivFixed]) >=0.5,
+    predictionsJustElo = rateFromElo(eloGapFixed, 0) >=0.5,
+    predictionsJustCiv = rateFromElo(eloAveragesLastX$elo[eloAveragesLastX$civ == playerCivFixed], eloAveragesLastX$elo[eloAveragesLastX$civ == opponentCivFixed]) >=0.5
+    )
+data$predictionsJustElo <- factor(data$predictionsJustElo)
+data$predictionsJustCiv <- factor(data$predictionsJustCiv)
+data$predictionsBoth <- factor(data$predictionsBoth)
+
+data$winnerFixed <- factor(data$winnerFixed)
+print(confusionMatrix(data$predictionsJustElo, data$winnerFixed))
+print(confusionMatrix(data$predictionsJustCiv, data$winnerFixed))
+print(confusionMatrix(data$predictionsBoth, data$winnerFixed))
 
 
-temp <- match1v1Clean
+stop("")
+
+
+
+temp <- match1v1CleanMatchupFixed
 
 #temp <- distinct(temp, MatchId, .keep_all = TRUE)
-temp <- filter(temp, playerCiv != opponentCiv)
+temp <- filter(temp, playerCivFixed != opponentCivFixed)
 temp <- filter(temp, playerElo > 1700 & opponentElo > 1700)
 temp <- filter(temp, matchMap == "Arabia")
 #temp <- filter(temp, (upReleaseVersion == "R6" | upReleaseVersion == "R7" & wk))
 temp <- filter(temp, wk)
 
+lTierCivs = c("Khmer", "Saracens", "Vietnamese", "Italians")
+hTierCivs = c("Franks", "Aztecs", "Slavs", "Spanish")
+
+temp <- filter(temp, (playerCivFixed %in% lTierCivs & opponentCivFixed %in% hTierCivs) | (playerCivFixed %in% hTierCivs & opponentCivFixed %in% lTierCivs))
+
+temp$winnerFixed <- factor(temp$winnerFixed)
+#temp$playerCiv <- factor(temp$playerCiv)
+#temp$opponentCiv <- factor(temp$opponentCiv)
+temp$matchupFixed <- droplevels(temp$matchupFixed)
+
+
+
+#temp %>% group_by(winnerFixed) %>% sample_n(size = 30000)
+
+#sample <- sample_n(temp, size=1000) %>% as.data.frame
+sample <- temp
+partition <- createDataPartition(sample$winnerFixed)
+
+sample.train <- sample[partition$Resample1,]
+sample.test <- sample[-partition$Resample1,]
+
+
+report_results <- function(data, predfunc, nt=200) {
+  data$predictions <- predfunc(data)
+  str(data$predictions)
+  str(data$winnerFixed)
+  print(confusionMatrix(data$predictions, data$winnerFixed))
+}
+
+# First try with logistic regression
+
+# model.glm <- glm(winnerFixed ~ eloGapFixed + playerCivFixed, family=binomial(link='logit'),
+#                  data=sample.train)
+
+# report_results(sample.train, function(x) {
+#   (predict(model.glm, type='response', newdata=x) >= 0.5) %>% factor
+# })
+
+# report_results(sample.test, function(x) {
+#   (predict(model.glm, type='response', newdata=x) >= 0.5) %>% factor
+# })
+
+model.rf <- randomForest(winnerFixed ~ eloGapFixed + matchupFixed,
+                         data=sample.train,
+                         ntree=500, importance=T, localImp=TRUE)
+
+report_results(sample.train, function(x) {
+  (predict(model.rf, type='response', newdata=x)) %>%
+    factor
+})
+
+report_results(sample.test, function(x) {
+  (predict(model.rf, type='response', newdata=x)) %>%
+    factor
+})
+
+imp <- importance(model.rf, type=1, scale = F)
+ggplot(data.frame(imp=imp[,1], var=names(imp[,1])) %>% filter(imp>=0.001), aes(x=var, y=imp)) +
+    geom_bar(stat='identity') +
+    coord_flip()
+
+
+
+stop("")
 
 # civList <- sort(unique(temp$playerCiv))
 

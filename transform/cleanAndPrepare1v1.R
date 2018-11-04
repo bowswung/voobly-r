@@ -61,7 +61,7 @@ tempCivFixed <- rowwise(tempCivFixed) %>% mutate(
     matchupFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), paste(playerCiv, opponentCiv, sep="-"), paste(opponentCiv, playerCiv , sep="-")),
 
     eloGapFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), eloGap, -eloGap),
-    winnerFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), winner, !winner))
+    winnerFixed = ifelse(which(civList == playerCiv) < which(civList == opponentCiv), winner, !winner)) %>% ungroup()
 tempCivFixed$matchupFixed <- factor(tempCivFixed$matchupFixed)
 tempCivFixed <- select(tempCivFixed, -matchMods, -playerCiv, -opponentCiv, -matchPlayerId, -opponentPlayerId, -eloGap, -winner, -matchup, -MatchId)
 match1v1CleanMatchupFixed <- tempCivFixed

@@ -9,10 +9,10 @@ library(hues)
 temp <- match1v1Clean
 temp <- distinct(temp, MatchId, .keep_all = TRUE)
 temp <- filter(temp, playerCiv != opponentCiv)
-temp <- filter(temp, matchMap == "Arena")
+temp <- filter(temp, matchMap == "Arabia")
 #temp <- filter(temp, (upReleaseVersion == "R6" | upReleaseVersion == "R7" & wk))
 temp <- filter(temp, (wk))
-temp <- filter(temp, ( playerElo > 1700 & opponentElo > 1700 & (playerElo + opponentElo) /2) < 2000)
+temp <- filter(temp, ( playerElo < 1700 & opponentElo < 1700))
 #temp <- filter(temp, ( (playerElo > 2200 & opponentElo > 2200)))
 temp <- arrange(temp, MatchDate)
 
@@ -93,7 +93,8 @@ temp$opponentCiv <- factor(temp$opponentCiv)
 #   ratings[tempToWorkWith$loseCiv[i]] = loseCivEloAfter
 # }
 # elo <- data.frame
-# elo.withPlayer.1700.arena <- data.frame(matchDate = elo.matchDates, civ=elo.civ, eloBefore=elo.eloBefore, eloChange = elo.eloChange, eloAfter = elo.eloAfter)
+# elo.withPlayer.noobs <- data.frame(matchDate = elo.matchDates, civ=elo.civ, eloBefore=elo.eloBefore, eloChange = elo.eloChange, eloAfter = elo.eloAfter)
+# stop("ASDasd")
 # stop("ADASADS")
 
 
@@ -188,7 +189,7 @@ for (i in c(1,9,17,25)) {
   set.seed(2)
   #colors <- unname(iwanthue(31, hmin=0, hmax=360, cmin=0, cmax=100, lmin=30, lmax=100, random = TRUE))
 
-  fName <- paste("temp/images/1700-arena-",civsToWorkOn[1],"-",civsToWorkOn[length(civsToWorkOn)], ".png", sep="")
+  fName <- paste("temp/images/noobs-arabia-",civsToWorkOn[1],"-",civsToWorkOn[length(civsToWorkOn)], ".png", sep="")
   png(filename=fName, width=1920, height=1080)
   p <- ggplot(data=eloForPlot, aes(x=date, y=elo, group=civ)) +
         geom_point(aes(color=civ), size=0.5, alpha=0.2) +
